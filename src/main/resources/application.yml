@@ -6,10 +6,19 @@ spring:
     name: CryptoCoinPrice_Bot
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/cryptobot_main
     username: postgres
     password: postgres
   jpa:
     hibernate:
       ddl-auto: validate
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    locations: classpath:db/migration
+
+bot:
+  token: 5627717663:AAGnUiGSwunx6-MNkcBSXdlkluHf-YfFM7s
+  username: crypto_price_bot
+logging:
+  level:
+    root: info
