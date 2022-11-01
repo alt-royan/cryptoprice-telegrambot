@@ -20,18 +20,11 @@ CREATE TABLE notification
     currency        varchar(50)      NOT NULL,
     type            varchar(50)      NOT NULL,
     triggered_price double precision NOT NULL,
+    chat_id         BIGINT           NOT NULL,
     created         timestamp        NOT NULL
 );
 
-CREATE TABLE chat_notification
-(
-    chat_id         BIGINT NOT NULL,
-    notification_id BIGINT NOT NULL
-);
-
-ALTER TABLE chat_notification
+ALTER TABLE notification
     ADD CONSTRAINT chat_id_fk FOREIGN KEY (chat_id) references chat (id);
-ALTER TABLE chat_notification
-    ADD CONSTRAINT notification_id_fk FOREIGN KEY (notification_id) references notification (id);
 ALTER TABLE chat_coin
     ADD CONSTRAINT chat_id_fk FOREIGN KEY (chat_id) references chat (id);

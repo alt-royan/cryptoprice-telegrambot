@@ -9,9 +9,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.cryptoprice.cryptopricetelegrambot.dto.binance.TickerPrice24hDto;
 import com.github.cryptoprice.cryptopricetelegrambot.dto.binance.TickerPriceDto;
+import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPrice24hDto;
+import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPriceDto;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.ClientException;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.ExchangeServerException;
+import com.github.cryptoprice.cryptopricetelegrambot.mapper.CoinPrice24hMapper;
+import com.github.cryptoprice.cryptopricetelegrambot.mapper.CoinPriceMapper;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.ExchangeService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -26,11 +31,16 @@ import java.util.stream.Collectors;
 public class BinanceService implements ExchangeService {
 
     private final Market market;
+
     private final ObjectMapper objectMapper;
+
+    private final CoinPrice24hMapper coinPrice24hMapper;
+
+    private final CoinPriceMapper coinPriceMapper;
 
     @SneakyThrows(value = {JsonProcessingException.class})
     @Override
-    public List<TickerPriceDto> getCoinPrice(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException {
+    public List<CoinPriceDto> getCoinPrice(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException {
         var symbols = convertToSymbols(coinCodes, currency);
 
         LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
@@ -38,8 +48,9 @@ public class BinanceService implements ExchangeService {
 
         try {
             var result = market.tickerSymbol(parameters);
-            return objectMapper.readValue(result, new TypeReference<>() {
+            List<TickerPriceDto> tickerPriceList = objectMapper.readValue(result, new TypeReference<>() {
             });
+            return coinPriceMapper.toCoinPriceList(tickerPriceList);
         } catch (BinanceClientException e) {
             e.printStackTrace();
             throw new ClientException(e.getMessage(), e.getErrorCode());
@@ -55,7 +66,7 @@ public class BinanceService implements ExchangeService {
 
     @SneakyThrows(value = {JsonProcessingException.class})
     @Override
-    public List<TickerPrice24hDto> getCoinPriceFor24h(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException {
+    public List<CoinPrice24hDto> getCoinPriceFor24h(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException {
         var symbols = convertToSymbols(coinCodes, currency);
 
         LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
@@ -65,8 +76,9 @@ public class BinanceService implements ExchangeService {
 
         try {
             var result = market.ticker24H(parameters);
-            return objectMapper.readValue(result, new TypeReference<>() {
+            List<TickerPrice24hDto> tickerPrice24hList = objectMapper.readValue(result, new TypeReference<>() {
             });
+            return coinPrice24hMapper.toCoinPrice24hList(tickerPrice24hList);
         } catch (BinanceClientException e) {
             e.printStackTrace();
             throw new ClientException(e.getMessage(), e.getErrorCode());
@@ -79,14 +91,20 @@ public class BinanceService implements ExchangeService {
         }
     }
 
+    @Override
+    public Exchange getExchange() {
+        return Exchange.BINANCE;
+    }
+
     private List<String> convertToSymbols(List<String> coinCodes, Currency currency) {
         return coinCodes.stream()
                 .map(code -> {
-                    var currencyString = currency.toString();
-                    if (code.equals(currencyString)) {
+                    var coinCode = code.toUpperCase();
+                    var currencyString = currency.toString().toUpperCase();
+                    if (coinCode.equals(currencyString)) {
                         throw new IllegalArgumentException("coinCode and currency can`t be equals");
                     }
-                    return code + currencyString;
+                    return coinCode + currencyString;
                 }).collect(Collectors.toList());
     }
 }

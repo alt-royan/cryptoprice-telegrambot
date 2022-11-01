@@ -23,12 +23,6 @@ public class Chat {
     @Column(name = "coin_code")
     private List<String> favoriteCoins;
 
-    @OneToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REMOVE})
-    @JoinTable(name = "chat_notification",
-            joinColumns = @JoinColumn(name = "chat_id"),
-            inverseJoinColumns = @JoinColumn(name = "notification_id"))
-    private List<Notification> notifications;
-
     @Enumerated(EnumType.STRING)
     private Exchange exchange;
 

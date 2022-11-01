@@ -28,6 +28,8 @@ public class Notification {
 
     private Double triggeredPrice;
 
+    private Long chatId;
+
     @CreationTimestamp
     private Instant created;
 }
