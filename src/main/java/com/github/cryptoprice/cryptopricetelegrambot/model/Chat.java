@@ -14,6 +14,7 @@ import java.util.List;
 public class Chat {
 
     @Id
+    @GeneratedValue
     private Long id;
 
     private Long chatId;

@@ -12,11 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 public interface ExchangeService {
-    default CoinPriceDto getCoinPrice(String coinCode, Currency currency) {
+    default CoinPriceDto getCoinPrice(String coinCode, Currency currency) throws ClientException, ExchangeServerException {
         return this.getCoinPrice(List.of(coinCode), currency).get(0);
     }
 
-    default CoinPrice24hDto getCoinPriceFor24h(String coinCode, Currency currency) {
+    default CoinPrice24hDto getCoinPriceFor24h(String coinCode, Currency currency) throws ClientException, ExchangeServerException {
         return this.getCoinPriceFor24h(List.of(coinCode), currency).get(0);
     }
 

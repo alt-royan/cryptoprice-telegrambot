@@ -5,10 +5,7 @@ import com.github.cryptoprice.cryptopricetelegrambot.model.enums.NotificationTyp
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.Instant;
 
 @Entity
@@ -16,6 +13,7 @@ import java.time.Instant;
 public class Notification {
 
     @Id
+    @GeneratedValue
     private Long id;
 
     private String coinCode;
@@ -32,4 +30,9 @@ public class Notification {
 
     @CreationTimestamp
     private Instant created;
+
+    @Override
+    public String toString() {
+        return String.format("%s %s %f %s", coinCode.toUpperCase(), type.getSign(), triggeredPrice, currency.toString());
+    }
 }
