@@ -1,35 +1,49 @@
 package com.github.cryptoprice.cryptopricetelegrambot.service.common;
 
-import com.github.cryptoprice.cryptopricetelegrambot.exception.ClientException;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.ExchangeServerException;
+import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPrice24hDto;
+import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPriceDto;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.*;
+import com.github.cryptoprice.cryptopricetelegrambot.model.Notification;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
 
 import java.util.List;
+import java.util.Map;
 
 public interface BotService {
 
-    String checkCoinPrice(Long chatId, String coinCode, Currency currency) throws ClientException, ExchangeServerException;
+    void registerChat(Long chatId);
 
-    String compareDiffExchangePrice(Long chatId, String coinCode, Currency currency) throws ClientException, ExchangeServerException;
+    CoinPrice24hDto getCoinPrice24h(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException;
 
-    String checkFavouriteCoinsPrice(Long chatId, Currency currency) throws ClientException, ExchangeServerException;
+    CoinPriceDto getCoinPrice(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException;
 
-    String setExchange(Long chatId, Exchange exchange) throws ClientException, ExchangeServerException;
+    Map<Exchange, Object> getPriceAllExchanges(Long chatId, String coinCode, Currency currency);
 
-    String getExchange(Long chatId) throws ClientException, ExchangeServerException;
+    Map<String, Object> getFavouriteCoinsPrice(Long chatId, Currency currency);
 
-    String addFavouriteCoins(Long chatId, List<String> coinCodes) throws ClientException, ExchangeServerException;
 
-    String removeFavouriteCoins(Long chatId, List<String> coinCodes) throws ClientException, ExchangeServerException;
+    void setExchange(Long chatId, Exchange exchange);
 
-    String getFavouriteCoins(Long chatId) throws ClientException, ExchangeServerException;
+    Exchange getExchange(Long chatId);
 
-    String createNotification(Long chatId, String request) throws ClientException, ExchangeServerException;
 
-    String removeNotification(Long chatId, Long notificationId) throws ClientException, ExchangeServerException;
+    void addFavouriteCoins(Long chatId, List<String> coinCodes) throws ExchangeServerException, NoCoinOnExchangeException;
 
-    String getActiveNotifications(Long chatId) throws ClientException, ExchangeServerException;
+    void removeFavouriteCoin(Long chatId, String coinCodes);
+
+    List<String> getFavouriteCoins(Long chatId);
+
+
+    Notification createNotification(Long chatId, String request) throws WrongCommandFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException;
+
+    void removeNotification(Long chatId, Long notificationId);
+
+    List<Notification> getActiveNotifications(Long chatId);
+
+    void stopChat(Long chatId);
+
+    void deleteChat(Long chatId);
 
 
 }

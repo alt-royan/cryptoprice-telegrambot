@@ -7,6 +7,7 @@ import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
 import com.github.cryptoprice.cryptopricetelegrambot.repository.ChatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,7 +20,8 @@ public class ChatService {
 
     private final ChatRepository repository;
 
-    public Chat registerChat(Long chatId) {
+    @Transactional
+    public void registerChat(Long chatId) {
         Chat chat;
         var savedChat = repository.findByChatId(chatId);
         if (savedChat.isPresent()) {
@@ -32,39 +34,46 @@ public class ChatService {
             chat.setStatus(ChatStatus.ACTIVE);
             chat.setFavoriteCoins(DEFAULT_FAVOURITE_COINS);
         }
-        return repository.save(chat);
-    }
-
-    public void stopChat(Long chatId) {
-        var chat = getByChatId(chatId);
-        chat.setStatus(ChatStatus.ACTIVE);
         repository.save(chat);
     }
 
+    @Transactional
+    public void stopChat(Long chatId) {
+        var chat = getByChatId(chatId);
+        chat.setStatus(ChatStatus.STOPPED);
+        repository.save(chat);
+    }
+
+    @Transactional
     public void deleteChat(Long chatId) {
         repository.deleteByChatId(chatId);
     }
 
+    @Transactional
     public void changeExchange(Long chatId, Exchange newExchange) {
         var chat = getByChatId(chatId);
         chat.setExchange(newExchange);
         repository.save(chat);
     }
 
-    public void addFavouriteCoin(Long chatId, String coinCode) {
+    @Transactional
+    public void addFavouriteCoins(Long chatId, List<String> coinCodes) {
         var chat = getByChatId(chatId);
         var favouriteCoins = chat.getFavoriteCoins();
-        if (!favouriteCoins.contains(coinCode)) {
-            favouriteCoins.add(coinCode);
-            chat.setFavoriteCoins(favouriteCoins);
-            repository.save(chat);
+        for (String coinCode : coinCodes) {
+            if (!favouriteCoins.contains(coinCode.toUpperCase())) {
+                favouriteCoins.add(coinCode.toUpperCase());
+            }
         }
+        chat.setFavoriteCoins(favouriteCoins);
+        repository.save(chat);
     }
 
+    @Transactional
     public void removeFavouriteCoin(Long chatId, String coinCode) {
         var chat = getByChatId(chatId);
         var favouriteCoins = chat.getFavoriteCoins();
-        favouriteCoins.remove(coinCode);
+        favouriteCoins.remove(coinCode.toUpperCase());
         chat.setFavoriteCoins(favouriteCoins);
         repository.save(chat);
     }

@@ -25,6 +25,6 @@ CREATE TABLE notification
 );
 
 ALTER TABLE notification
-    ADD CONSTRAINT chat_id_fk FOREIGN KEY (chat_id) references chat (id);
+    ADD CONSTRAINT chat_id_fk FOREIGN KEY (chat_id) references chat (chat_id);
 ALTER TABLE chat_coin
     ADD CONSTRAINT chat_id_fk FOREIGN KEY (chat_id) references chat (id);

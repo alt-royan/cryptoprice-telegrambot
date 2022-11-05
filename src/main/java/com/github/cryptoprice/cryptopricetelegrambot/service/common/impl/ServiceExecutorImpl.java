@@ -1,24 +1,25 @@
 package com.github.cryptoprice.cryptopricetelegrambot.service.common.impl;
 
 import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPrice24hDto;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.ClientException;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.ExchangeServerException;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.NotFoundException;
-import com.github.cryptoprice.cryptopricetelegrambot.model.Chat;
+import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPriceDto;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.*;
+import com.github.cryptoprice.cryptopricetelegrambot.model.Notification;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.NotificationType;
 import com.github.cryptoprice.cryptopricetelegrambot.service.chat.ChatService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.ExchangeService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.ServiceExecutor;
+import com.github.cryptoprice.cryptopricetelegrambot.service.notification.NotificationParser;
 import com.github.cryptoprice.cryptopricetelegrambot.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -32,91 +33,165 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     private final NotificationService notificationService;
 
     private ExchangeService getExchangeService(Long chatId) {
-        Chat chat;
-        try {
-            chat = chatService.getByChatId(chatId);
-        } catch (NotFoundException e) {
-            chat = chatService.registerChat(chatId);
-        }
+        var chat = chatService.getByChatId(chatId);
         return exchangeMap.get(chat.getExchange());
     }
 
     @Override
-    public void registerService(ExchangeService service) throws ClientException, ExchangeServerException {
+    public void registerService(ExchangeService service) {
         exchangeMap.put(service.getExchange(), service);
         log.info(service.getClass().getSimpleName() + " was registered for exchange " + service.getExchange());
     }
 
 
     @Override
-    public String checkCoinPrice(Long chatId, String coinCode, Currency currency) throws ClientException, ExchangeServerException {
-        var coinPrice24h = getExchangeService(chatId).getCoinPriceFor24h(coinCode, currency);
-        return coinPrice24h.toString();
+    public void registerChat(Long chatId) {
+        chatService.registerChat(chatId);
     }
 
     @Override
-    public String compareDiffExchangePrice(Long chatId, String coinCode, Currency currency) throws ClientException, ExchangeServerException {
-        List<CoinPrice24hDto> coinPrice24hList = new ArrayList<>();
+    public CoinPrice24hDto getCoinPrice24h(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException {
+        var exchangeService = getExchangeService(chatId);
+        try {
+            return exchangeService.getCoinPriceFor24h(coinCode, currency);
+        } catch (ClientException e) {
+            throw new NoCoinOnExchangeException(coinCode.toUpperCase(), exchangeService.getExchange());
+        }
+    }
+
+    @Override
+    public CoinPriceDto getCoinPrice(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException {
+        var exchangeService = getExchangeService(chatId);
+        try {
+            return exchangeService.getCoinPrice(coinCode, currency);
+        } catch (ClientException e) {
+            throw new NoCoinOnExchangeException(coinCode.toUpperCase(), exchangeService.getExchange());
+        }
+    }
+
+    /**
+     * Return the map type <{@link Exchange}, {@link Object}> where key is exchange and value can be {@link CoinPrice24hDto} or instance of {@link RuntimeException}
+     */
+    @Override
+    public Map<Exchange, Object> getPriceAllExchanges(Long chatId, String coinCode, Currency currency) {
+        chatService.getByChatId(chatId);
+        Map<Exchange, Object> coinPriceMap = new HashMap<>();
         for (ExchangeService service : exchangeMap.values()) {
-            coinPrice24hList.add(service.getCoinPriceFor24h(coinCode, currency));
+            try {
+                var coinPriceDto = service.getCoinPriceFor24h(coinCode, currency);
+                coinPriceMap.put(service.getExchange(), coinPriceDto);
+            } catch (ClientException e) {
+                coinPriceMap.put(service.getExchange(), new NoCoinOnExchangeException(coinCode, service.getExchange()));
+            } catch (ExchangeServerException e) {
+                coinPriceMap.put(service.getExchange(), e);
+            }
         }
-        return coinPrice24hList.toString();
+
+        return coinPriceMap;
     }
 
+    /**
+     * Return the map type <{@link String}, {@link Object}> where key is coinCode and value can be {@link CoinPrice24hDto} or {@link RuntimeException}
+     */
     @Override
-    public String checkFavouriteCoinsPrice(Long chatId, Currency currency) throws ClientException, ExchangeServerException {
+    public Map<String, Object> getFavouriteCoinsPrice(Long chatId, Currency currency) {
         var chat = chatService.getByChatId(chatId);
+        Map<String, Object> coinPriceMap = new HashMap<>();
         var favouriteCoins = chat.getFavoriteCoins();
-        var coinPrices = getExchangeService(chatId).getCoinPriceFor24h(favouriteCoins, currency);
-        return coinPrices.toString();
+        var exchangeService = getExchangeService(chat.getChatId());
+
+        for (String coinCode : favouriteCoins) {
+            try {
+                var coinPrice = exchangeService.getCoinPriceFor24h(coinCode, currency);
+                coinPriceMap.put(coinCode, coinPrice);
+            } catch (ClientException e) {
+                coinPriceMap.put(coinCode, new NoCoinOnExchangeException(coinCode, exchangeService.getExchange()));
+            } catch (ExchangeServerException e) {
+                coinPriceMap.put(coinCode, e);
+            }
+        }
+
+        return coinPriceMap;
     }
 
+
     @Override
-    public String setExchange(Long chatId, Exchange exchange) throws ClientException, ExchangeServerException {
+    public void setExchange(Long chatId, Exchange exchange) {
         chatService.changeExchange(chatId, exchange);
-        return "Биржа изменена";
     }
 
     @Override
-    public String getExchange(Long chatId) throws ClientException, ExchangeServerException {
+    public Exchange getExchange(Long chatId) {
         var chat = chatService.getByChatId(chatId);
-        var exchange = chat.getExchange();
-        return "Текущая биржа: " + exchange.getName();
+        return chat.getExchange();
     }
 
     @Override
-    public String addFavouriteCoins(Long chatId, List<String> coinCodes) throws ClientException, ExchangeServerException {
-        return null;
-    }
-
-    @Override
-    public String removeFavouriteCoins(Long chatId, List<String> coinCodes) throws ClientException, ExchangeServerException {
+    public void addFavouriteCoins(Long chatId, List<String> coinCodes) throws ExchangeServerException, NoCoinOnExchangeException {
+        var chat = chatService.getByChatId(chatId);
+        var exchangeService = getExchangeService(chat.getChatId());
         for (String coinCode : coinCodes) {
-            chatService.removeFavouriteCoin(chatId, coinCode);
+            try {
+                exchangeService.getCoinPrice(coinCode, Currency.USDT);
+            } catch (ClientException e) {
+                throw new NoCoinOnExchangeException(coinCode.toUpperCase(), exchangeService.getExchange());
+            }
         }
-        return "Удалено";
+        chatService.addFavouriteCoins(chat.getId(), coinCodes);
+    }
+
+
+    @Override
+    public void removeFavouriteCoin(Long chatId, String coinCode) {
+        chatService.removeFavouriteCoin(chatId, coinCode);
     }
 
     @Override
-    public String getFavouriteCoins(Long chatId) throws ClientException, ExchangeServerException {
+    public List<String> getFavouriteCoins(Long chatId) {
         var chat = chatService.getByChatId(chatId);
-        var favouriteCoins = chat.getFavoriteCoins();
-        return favouriteCoins.toString();
+        return chat.getFavoriteCoins();
     }
 
     @Override
-    public String createNotification(Long chatId, String request) throws ClientException, ExchangeServerException {
-        return null;
+    public Notification createNotification(Long chatId, String request) throws WrongCommandFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException {
+        var exchangeService = getExchangeService(chatId);
+        var notification = NotificationParser.parseNotificationCreateRequest(request);
+        notification.setChatId(chatId);
+        CoinPriceDto coinPrice;
+        try {
+            coinPrice = exchangeService.getCoinPrice(notification.getCoinCode(), notification.getCurrency());
+        } catch (ClientException e) {
+            throw new NoCoinOnExchangeException(notification.getCoinCode().toUpperCase(), exchangeService.getExchange());
+        }
+        if (NotificationType.LESS_THAN.equals(notification.getType()) && coinPrice.getPrice() < notification.getTriggeredPrice() ||
+                NotificationType.MORE_THAN.equals(notification.getType()) && coinPrice.getPrice() > notification.getTriggeredPrice()) {
+            throw new NotificationConditionAlreadyDoneException(notification);
+        }
+        return notificationService.createNotification(notification);
+    }
+
+    //done
+    @Override
+    public void removeNotification(Long chatId, Long notificationId) {
+        chatService.getByChatId(chatId);
+        notificationService.deleteNotification(notificationId);
+    }
+
+    //done
+    @Override
+    public List<Notification> getActiveNotifications(Long chatId) {
+        var chat = chatService.getByChatId(chatId);
+        return notificationService.getAllNotifications(chat.getChatId());
     }
 
     @Override
-    public String removeNotification(Long chatId, Long notificationId) throws ClientException, ExchangeServerException {
-        return null;
+    public void stopChat(Long chatId) {
+        chatService.stopChat(chatId);
     }
 
     @Override
-    public String getActiveNotifications(Long chatId) throws ClientException, ExchangeServerException {
-        var notifications = notificationService.getAllNotifications(chatId);
-        return notifications.toString();
+    public void deleteChat(Long chatId) {
+        notificationService.deleteAllNotification(chatId);
+        chatService.deleteChat(chatId);
     }
 }

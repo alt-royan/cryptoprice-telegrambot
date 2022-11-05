@@ -14,7 +14,9 @@ public interface Command {
      *
      * @param update provided {@link Update} object with all the needed data for command.
      */
-    void execute(Update update);
+    void execute(Update update) throws Exception;
+
+    void executeExceptionHandling(Update update);
 
     CommandName getCommandName();
 

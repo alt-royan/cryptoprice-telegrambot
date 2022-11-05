@@ -1,6 +1,7 @@
 package com.github.cryptoprice.cryptopricetelegrambot.bot;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandContainer;
+import com.github.cryptoprice.cryptopricetelegrambot.service.common.CommandCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,7 @@ public class TelegramCryptoPriceBot extends TelegramLongPollingBot {
     @Value("${bot.username}")
     private String username;
     private final CommandContainer commandContainer;
+    private final CommandCacheService commandCache;
 
     public static final String COMMAND_PREFIX = "/";
 
@@ -33,10 +35,24 @@ public class TelegramCryptoPriceBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            String message = update.getMessage().getText().trim();
-            String commandIdentifier = message.split(" ")[0].toLowerCase();
-            commandContainer.retrieveCommand(commandIdentifier).execute(update);
+        if (update.hasCallbackQuery()) {
+            String data = update.getCallbackQuery().getData();
+            Long chatId = update.getCallbackQuery().getMessage().getChatId();
+            if (data.startsWith(COMMAND_PREFIX)) {
+                commandContainer.retrieveCommand(data.split(" ")[0]).executeExceptionHandling(update);
+            } else {
+                var currentCommand = commandCache.getCurrentCommand(chatId).getCommandIdentifier();
+                commandContainer.retrieveCommand(currentCommand).executeExceptionHandling(update);
+            }
+        } else if (update.hasMessage() && update.getMessage().hasText()) {
+            String message = update.getMessage().getText();
+            Long chatId = update.getMessage().getChatId();
+            if (message.startsWith(COMMAND_PREFIX)) {
+                commandContainer.retrieveCommand(message.split(" ")[0]).executeExceptionHandling(update);
+            } else {
+                var currentCommand = commandCache.getCurrentCommand(chatId).getCommandIdentifier();
+                commandContainer.retrieveCommand(currentCommand).executeExceptionHandling(update);
+            }
         }
     }
 }

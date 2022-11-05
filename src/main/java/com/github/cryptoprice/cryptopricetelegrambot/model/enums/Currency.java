@@ -6,6 +6,5 @@ public enum Currency {
     USDT,
     BTC,
     ETH,
-    BNB,
     BUSD
 }

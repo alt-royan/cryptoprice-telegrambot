@@ -2,7 +2,7 @@ package com.github.cryptoprice.cryptopricetelegrambot.exception;
 
 import lombok.Getter;
 
-public class ExchangeServerException extends RuntimeException {
+public class ExchangeServerException extends Exception {
     private static final long serialVersionUID = 1L;
 
     @Getter

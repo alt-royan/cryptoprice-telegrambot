@@ -19,7 +19,7 @@ public class Chat {
 
     private Long chatId;
 
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "chat_coin", joinColumns = @JoinColumn(name = "chat_id"))
     @Column(name = "coin_code")
     private List<String> favoriteCoins;

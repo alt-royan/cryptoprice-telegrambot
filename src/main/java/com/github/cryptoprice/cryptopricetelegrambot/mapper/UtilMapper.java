@@ -11,8 +11,8 @@ public interface UtilMapper {
     default String fromBinanceSymbolToCoinCode(String symbol) {
         int currencyIndex;
         for (Currency currency : Currency.values()) {
-            currencyIndex = symbol.lastIndexOf(currency.name());
-            if (currencyIndex != -1) {
+            if (symbol.endsWith(currency.toString())) {
+                currencyIndex = symbol.lastIndexOf(currency.name());
                 try {
                     Currency.valueOf(symbol.substring(currencyIndex).toUpperCase());
                     return symbol.substring(0, currencyIndex).toUpperCase();
@@ -28,8 +28,8 @@ public interface UtilMapper {
     default Currency fromBinanceSymbolToCurrency(String symbol) {
         int currencyIndex;
         for (Currency currency : Currency.values()) {
-            currencyIndex = symbol.lastIndexOf(currency.name());
-            if (currencyIndex != -1) {
+            if (symbol.endsWith(currency.toString())) {
+                currencyIndex = symbol.lastIndexOf(currency.name());
                 try {
                     return Currency.valueOf(symbol.substring(currencyIndex).toUpperCase());
                 } catch (RuntimeException e) {

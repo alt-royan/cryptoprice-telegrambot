@@ -8,7 +8,9 @@ public enum CommandName {
     START("/start"),
     STOP("/stop"),
     PRICE("/price"),
-    HELP("/help");
+    HELP("/help"),
+
+    NONE("");
 
 
     private final String commandIdentifier;
