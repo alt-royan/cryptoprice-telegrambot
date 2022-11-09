@@ -56,10 +56,10 @@ public class BinanceService implements ExchangeService {
             throw new ClientException(e.getMessage(), e.getErrorCode());
         } catch (BinanceServerException e) {
             e.printStackTrace();
-            throw new ExchangeServerException(e.getMessage(), e.getHttpStatusCode());
+            throw new ExchangeServerException(e.getHttpStatusCode());
         } catch (BinanceConnectorException e) {
             e.printStackTrace();
-            throw new ExchangeServerException(e.getMessage());
+            throw new ExchangeServerException();
         }
     }
 
@@ -84,10 +84,10 @@ public class BinanceService implements ExchangeService {
             throw new ClientException(e.getMessage(), e.getErrorCode());
         } catch (BinanceServerException e) {
             e.printStackTrace();
-            throw new ExchangeServerException(e.getMessage(), e.getHttpStatusCode());
+            throw new ExchangeServerException(e.getHttpStatusCode());
         } catch (BinanceConnectorException e) {
             e.printStackTrace();
-            throw new ExchangeServerException(e.getMessage());
+            throw new ExchangeServerException();
         }
     }
 

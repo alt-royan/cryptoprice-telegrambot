@@ -11,14 +11,10 @@ public class StopCommand implements Command {
 
     public static final String STOP_MESSAGE = "Здесь будет прощальное сообщение";
 
+
     @Override
-    public void execute(Update update) {
+    public void executeWithExceptions(Update update) {
         MessageSender.sendMessage(update.getMessage().getChatId(), STOP_MESSAGE);
-    }
-
-    @Override
-    public void executeWithExceptions(Update update) throws Exception {
-
     }
 
     @Override

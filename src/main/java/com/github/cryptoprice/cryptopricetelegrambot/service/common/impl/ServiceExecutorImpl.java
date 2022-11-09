@@ -168,7 +168,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     }
 
     @Override
-    public Notification createNotification(Long chatId, String request) throws WrongCommandFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException {
+    public Notification createNotification(Long chatId, String request) throws WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException {
         checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
         var notification = NotificationParser.parseNotificationCreateRequest(request);

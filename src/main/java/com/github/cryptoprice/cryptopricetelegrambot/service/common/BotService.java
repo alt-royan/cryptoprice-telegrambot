@@ -35,7 +35,7 @@ public interface BotService {
     List<String> getFavouriteCoins(Long chatId);
 
 
-    Notification createNotification(Long chatId, String request) throws WrongCommandFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException;
+    Notification createNotification(Long chatId, String request) throws WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException;
 
     void removeNotification(Long chatId, Long notificationId);
 

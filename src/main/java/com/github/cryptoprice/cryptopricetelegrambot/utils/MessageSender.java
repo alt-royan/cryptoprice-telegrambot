@@ -93,4 +93,22 @@ public class MessageSender {
         }
     }
 
+    public static Message editOrSend(long chatId, Integer messageId, String text) {
+        if (messageId != null) {
+            MessageSender.editMessage(chatId, messageId, text);
+            return new Message();
+        } else {
+            return MessageSender.sendMessage(chatId, text);
+        }
+    }
+
+    public static Message editOrSend(long chatId, Integer messageId, String text, List<List<InlineKeyboardButton>> keyboard) {
+        if (messageId != null) {
+            MessageSender.editMessage(chatId, messageId, text, keyboard);
+            return new Message();
+        } else {
+            return MessageSender.sendMessage(chatId, text, keyboard);
+        }
+    }
+
 }

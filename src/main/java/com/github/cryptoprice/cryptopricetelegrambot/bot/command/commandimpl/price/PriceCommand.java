@@ -13,7 +13,6 @@ import com.github.cryptoprice.cryptopricetelegrambot.service.common.CommandCache
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
@@ -36,48 +35,10 @@ public class PriceCommand implements Command {
     private static final int BUTTONS_IN_LINE = 4;
 
     @Override
-    public void execute(Update update) {
-        long chatId;
-        if (update.hasCallbackQuery()) {
-            chatId = update.getCallbackQuery().getMessage().getChatId();
-        } else if (update.hasMessage() && update.getMessage().hasText()) {
-            chatId = update.getMessage().getChatId();
-        } else {
-            return;
-        }
-
-        try {
-            this.executeWithExceptions(update);
-        } catch (WrongCommandFormatException ex) {
-            if (ex.getEditableMessageId() != null) {
-                MessageSender.editMessage(chatId, ex.getEditableMessageId(), WRONG_PRICE_FORMAT);
-            } else {
-                MessageSender.sendMessage(chatId, WRONG_PRICE_FORMAT);
-            }
-        } catch (NoCoinOnExchangeException ex) {
-            if (ex.getEditableMessageId() != null) {
-                MessageSender.editMessage(chatId, ex.getEditableMessageId(), String.format(NO_COIN_ON_EXCHANGE, ex.getCoinCode(), ex.getExchange().getName()));
-            } else {
-                MessageSender.sendMessage(chatId, String.format(NO_COIN_ON_EXCHANGE, ex.getCoinCode(), ex.getExchange().getName()));
-            }
-        } catch (NotSupportedCurrencyException ex) {
-            if (ex.getEditableMessageId() != null) {
-                MessageSender.editMessage(chatId, ex.getEditableMessageId(), String.format(NOT_SUPPORTED_CURRENCY, ex.getCurrency()));
-            } else {
-                MessageSender.sendMessage(chatId, String.format(NOT_SUPPORTED_CURRENCY, ex.getCurrency()));
-            }
-        } catch (ExchangeServerException ex) {
-            MessageSender.sendMessage(chatId, EXCHANGE_SERVER_ERROR);
-        } catch (RuntimeException ex) {
-            MessageSender.sendMessage(update.getMessage().getChatId(), TRY_AGAIN);
-        }
-    }
-
-    @Override
-    public void executeWithExceptions(Update update) throws NoCoinOnExchangeException, WrongCommandFormatException, NotSupportedCurrencyException, ExchangeServerException {
+    public void executeWithExceptions(Update update) throws WrongCommandFormatException, NoCoinOnExchangeException, NotSupportedCurrencyException, ExchangeServerException {
         String text;
-        long chatId;
-        int messageId;
+        Long chatId;
+        Integer messageId;
         boolean isCallback;
 
         if (update.hasCallbackQuery()) {
@@ -88,7 +49,7 @@ public class PriceCommand implements Command {
         } else if (update.hasMessage() && update.getMessage().hasText()) {
             text = update.getMessage().getText().trim();
             chatId = update.getMessage().getChatId();
-            messageId = update.getMessage().getMessageId();
+            messageId = null;
             isCallback = false;
         } else {
             return;
@@ -111,23 +72,27 @@ public class PriceCommand implements Command {
                     .callbackData(ANOTHER_COIN_CALLBACK)
                     .build()));
 
-            editOrSend(chatId, messageId, isCallback, CHOOSE_CRYPTO, keyboard);
+            MessageSender.editOrSend(chatId, messageId, CHOOSE_CRYPTO, keyboard);
             commandCacheService.setCurrentCommand(chatId, getCommandName());
         } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
             if (!Pattern.matches(requestRegex, text)) {
-                throw new WrongCommandFormatException();
+                throw new WrongCommandFormatException(getCommandName(), messageId);
             }
-            var waitMessage = editOrSend(chatId, messageId, isCallback, WATCH_PRICE_WAIT);
+            var waitMessage = MessageSender.editOrSend(chatId, messageId, WATCH_PRICE_WAIT);
 
             var coinPrice24h = getCoinPriceFromRequest(text, chatId, messageId);
 
-            MessageSender.editMessage(chatId, waitMessage.getMessageId(), coinPrice24h.toString());
+            if (isCallback) {
+                MessageSender.editMessage(chatId, messageId, coinPrice24h.toString());
+            } else {
+                MessageSender.editMessage(chatId, waitMessage.getMessageId(), coinPrice24h.toString());
+            }
             commandCacheService.clearCache(chatId);
         } else if (isCallback && text.contentEquals(ANOTHER_COIN_CALLBACK)) {
             MessageSender.editMessage(chatId, messageId, ANOTHER_COIN_CHOOSE_TEXT);
         } else {
             var keyboard = createKeyboardForCurrencies(text);
-            editOrSend(chatId, messageId, isCallback, CHOOSE_CURRENCY, keyboard);
+            MessageSender.editOrSend(chatId, messageId, CHOOSE_CURRENCY, keyboard);
             commandCacheService.clearCache(chatId);
         }
     }
@@ -173,23 +138,6 @@ public class PriceCommand implements Command {
         return keyboard;
     }
 
-    private Message editOrSend(long chatId, int messageId, boolean isCallback, String text) {
-        if (isCallback) {
-            MessageSender.editMessage(chatId, messageId, text);
-            return new Message();
-        } else {
-            return MessageSender.sendMessage(chatId, text);
-        }
-    }
-
-    private void editOrSend(long chatId, int messageId, boolean isCallback, String text, List<List<InlineKeyboardButton>> keyboard) {
-        if (isCallback) {
-            MessageSender.editMessage(chatId, messageId, text, keyboard);
-        } else {
-            MessageSender.sendMessage(chatId, text, keyboard);
-        }
-    }
-
 
     @Override
     public CommandName getCommandName() {
@@ -203,10 +151,5 @@ public class PriceCommand implements Command {
         public static final String ANOTHER_COIN_CALLBACK = "write_another_coin";
         public static final String ANOTHER_COIN_CHOOSE_TEXT = "Введите код криптовалюты";
         public static final String WATCH_PRICE_WAIT = "Смотрю курс ...";
-        public static final String WRONG_PRICE_FORMAT = "Неверный формат команды /price";
-        public static final String NOT_SUPPORTED_CURRENCY = "Данная валюта %s не поддерживается";
-        public static final String NO_COIN_ON_EXCHANGE = "Такой монеты %s нет на бирже %s. Попробуйте сменить биржу или выберите другую криптовалюту";
-        public static final String EXCHANGE_SERVER_ERROR = "Ошибка сервера биржи. Попробуйте позже";
-        public final static String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
     }
 }

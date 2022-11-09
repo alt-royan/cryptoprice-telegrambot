@@ -26,46 +26,19 @@ public class FavouritesRemoveCommand implements Command {
     private final String requestRegex = "/favouritesRemove [a-zA-Z]*";
 
     @Override
-    public void execute(Update update) {
-        long chatId;
-        if (update.hasCallbackQuery()) {
-            chatId = update.getCallbackQuery().getMessage().getChatId();
-        } else if (update.hasMessage() && update.getMessage().hasText()) {
-            chatId = update.getMessage().getChatId();
-        } else {
-            return;
-        }
-
-        try {
-            this.executeWithExceptions(update);
-        } catch (WrongCommandFormatException e) {
-            if (e.getEditableMessageId() != null) {
-                MessageSender.editMessage(chatId, e.getEditableMessageId(), WRONG_DELETE_FORMAT);
-            } else {
-                MessageSender.sendMessage(chatId, WRONG_DELETE_FORMAT);
-            }
-        } catch (RuntimeException ex) {
-            MessageSender.sendMessage(update.getMessage().getChatId(), TRY_AGAIN);
-        }
-    }
-
-    @Override
     public void executeWithExceptions(Update update) throws WrongCommandFormatException {
         String text;
-        long chatId;
-        int messageId;
-        boolean isCallback;
+        Long chatId;
+        Integer messageId;
 
         if (update.hasCallbackQuery()) {
             text = update.getCallbackQuery().getData().trim();
             chatId = update.getCallbackQuery().getMessage().getChatId();
             messageId = update.getCallbackQuery().getMessage().getMessageId();
-            isCallback = true;
         } else if (update.hasMessage() && update.getMessage().hasText()) {
             text = update.getMessage().getText().trim();
             chatId = update.getMessage().getChatId();
-            messageId = update.getMessage().getMessageId();
-            isCallback = false;
+            messageId = null;
         } else {
             return;
         }
@@ -78,32 +51,17 @@ public class FavouritesRemoveCommand implements Command {
                     .callbackData(String.format(DELETE_FAVOURITE_CALLBACK, f))
                     .build())));
 
-            editOrSend(chatId, messageId, isCallback, DELETE_INIT_MESSAGE, keyboard);
+            MessageSender.editOrSend(chatId, messageId, DELETE_INIT_MESSAGE, keyboard);
         } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
             if (!Pattern.matches(requestRegex, text)) {
-                throw new WrongCommandFormatException(messageId);
+                throw new WrongCommandFormatException(getCommandName(), messageId);
             }
             var coinCode = text.substring(getCommandName().getCommandIdentifier().length()).trim();
             botService.removeFavouriteCoin(chatId, coinCode);
-            editOrSend(chatId, messageId, isCallback, FAVOURITE_DELETED);
+            MessageSender.editOrSend(chatId, messageId, String.format(FAVOURITE_DELETED, coinCode.toUpperCase()));
         }
     }
 
-    private void editOrSend(long chatId, int messageId, boolean isCallback, String text) {
-        if (isCallback) {
-            MessageSender.editMessage(chatId, messageId, text);
-        } else {
-            MessageSender.sendMessage(chatId, text);
-        }
-    }
-
-    private void editOrSend(long chatId, int messageId, boolean isCallback, String text, List<List<InlineKeyboardButton>> keyboard) {
-        if (isCallback) {
-            MessageSender.editMessage(chatId, messageId, text, keyboard);
-        } else {
-            MessageSender.sendMessage(chatId, text, keyboard);
-        }
-    }
 
     @Override
     public CommandName getCommandName() {
@@ -112,10 +70,7 @@ public class FavouritesRemoveCommand implements Command {
 
     static class TextMessages {
         public final static String DELETE_INIT_MESSAGE = "Выберите что убрать из избранного: ";
-
-        public final static String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
         public final static String FAVOURITE_DELETED = "%s убрано из избранных";
         public final static String DELETE_FAVOURITE_CALLBACK = "/favouritesRemove %s";
-        public static final String WRONG_DELETE_FORMAT = "Неверный формат команды /favouritesRemove";
     }
 }

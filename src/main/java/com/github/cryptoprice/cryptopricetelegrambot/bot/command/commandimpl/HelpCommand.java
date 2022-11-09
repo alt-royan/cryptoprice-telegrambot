@@ -12,13 +12,8 @@ public class HelpCommand implements Command {
     public static final String HELP_MESSAGE = "Здесь будет справка по командам";
 
     @Override
-    public void execute(Update update) {
+    public void executeWithExceptions(Update update) {
         MessageSender.sendMessage(update.getMessage().getChatId(), HELP_MESSAGE);
-    }
-
-    @Override
-    public void executeWithExceptions(Update update) throws Exception {
-
     }
 
 

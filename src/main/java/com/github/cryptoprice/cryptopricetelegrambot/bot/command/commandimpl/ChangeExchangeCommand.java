@@ -14,7 +14,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.ChangeExchangeCommand.TextMessages.*;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.ChangeExchangeCommand.TextMessages.CHOOSE_EXCHANGE;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.ChangeExchangeCommand.TextMessages.DONE;
 
 @Component
 @RequiredArgsConstructor
@@ -23,46 +24,20 @@ public class ChangeExchangeCommand implements Command {
     private final BotService botService;
 
     @Override
-    public void execute(Update update) {
-        long chatId;
-        if (update.hasCallbackQuery()) {
-            chatId = update.getCallbackQuery().getMessage().getChatId();
-        } else if (update.hasMessage() && update.getMessage().hasText()) {
-            chatId = update.getMessage().getChatId();
-        } else {
-            return;
-        }
-
-        try {
-            this.executeWithExceptions(update);
-        } catch (RuntimeException e) {
-            MessageSender.sendMessage(update.getMessage().getChatId(), TRY_AGAIN);
-        } catch (WrongCommandFormatException ex) {
-            if (ex.getEditableMessageId() != null) {
-                MessageSender.editMessage(chatId, ex.getEditableMessageId(), WRONG_EXCHANGE);
-            } else {
-                MessageSender.sendMessage(chatId, WRONG_EXCHANGE);
-            }
-        }
-    }
-
-    @Override
     public void executeWithExceptions(Update update) throws WrongCommandFormatException {
         String text;
-        long chatId;
-        int messageId;
+        Long chatId;
+        Integer messageId;
         boolean isCallback;
 
         if (update.hasCallbackQuery()) {
             text = update.getCallbackQuery().getData().trim();
             chatId = update.getCallbackQuery().getMessage().getChatId();
             messageId = update.getCallbackQuery().getMessage().getMessageId();
-            isCallback = true;
         } else if (update.hasMessage() && update.getMessage().hasText()) {
             text = update.getMessage().getText().trim();
             chatId = update.getMessage().getChatId();
-            messageId = update.getMessage().getMessageId();
-            isCallback = false;
+            messageId = null;
         } else {
             return;
         }
@@ -76,35 +51,20 @@ public class ChangeExchangeCommand implements Command {
                         .callbackData(getCommandName().getCommandIdentifier() + " " + ex)
                         .build()));
             }
-            editOrSend(chatId, messageId, isCallback, String.format(CHOOSE_EXCHANGE, exchange.getName()), keyboard);
+            MessageSender.editOrSend(chatId, messageId, String.format(CHOOSE_EXCHANGE, exchange.getName()), keyboard);
         } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
             var exchangeName = text.substring(getCommandName().getCommandIdentifier().length()).trim();
             Exchange exchange;
             try {
                 exchange = Exchange.getEnum(exchangeName);
             } catch (IllegalArgumentException e) {
-                throw new WrongCommandFormatException();
+                throw new WrongCommandFormatException(getCommandName(), messageId);
             }
             botService.setExchange(chatId, exchange);
-            editOrSend(chatId, messageId, isCallback, String.format(DONE, exchange.getName()));
+            MessageSender.editOrSend(chatId, messageId, String.format(DONE, exchange.getName()));
         }
     }
 
-    private void editOrSend(long chatId, int messageId, boolean isCallback, String text) {
-        if (isCallback) {
-            MessageSender.editMessage(chatId, messageId, text);
-        } else {
-            MessageSender.sendMessage(chatId, text);
-        }
-    }
-
-    private void editOrSend(long chatId, int messageId, boolean isCallback, String text, List<List<InlineKeyboardButton>> keyboard) {
-        if (isCallback) {
-            MessageSender.editMessage(chatId, messageId, text, keyboard);
-        } else {
-            MessageSender.sendMessage(chatId, text, keyboard);
-        }
-    }
 
     @Override
     public CommandName getCommandName() {

@@ -2,19 +2,22 @@ package com.github.cryptoprice.cryptopricetelegrambot.exception;
 
 import lombok.Getter;
 
-public class ExchangeServerException extends Exception {
-    private static final long serialVersionUID = 1L;
+/**
+ * Exception throws when receives error from exchange server
+ */
+@Getter
+public class ExchangeServerException extends CommonException {
 
-    @Getter
+    private final String message = "Ошибка на сервере биржи. Попробуйте позже";
     private final int statusCode;
 
-    public ExchangeServerException(String message) {
-        super(message);
+    public ExchangeServerException() {
+        super();
         this.statusCode = 0;
     }
 
-    public ExchangeServerException(String message, int statusCode) {
-        super(message);
+    public ExchangeServerException(int statusCode) {
+        super();
         this.statusCode = statusCode;
     }
 }

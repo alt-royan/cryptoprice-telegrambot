@@ -13,21 +13,8 @@ public class UnknownCommand implements Command {
     public static final String UNKNOWN_MESSAGE = "Неизвестная команда";
 
     @Override
-    public void execute(Update update) {
-        Long chatId;
-        if (update.hasCallbackQuery()) {
-            chatId = update.getCallbackQuery().getMessage().getChatId();
-        } else if (update.hasMessage()) {
-            chatId = update.getMessage().getChatId();
-        } else {
-            return;
-        }
-        MessageSender.sendMessage(chatId, UNKNOWN_MESSAGE);
-    }
-
-    @Override
-    public void executeWithExceptions(Update update) throws Exception {
-
+    public void executeWithExceptions(Update update) {
+        MessageSender.sendMessage(update.getMessage().getChatId(), UNKNOWN_MESSAGE);
     }
 
     @Override

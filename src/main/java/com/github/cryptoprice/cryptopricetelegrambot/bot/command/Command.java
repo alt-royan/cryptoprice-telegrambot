@@ -1,6 +1,7 @@
 package com.github.cryptoprice.cryptopricetelegrambot.bot.command;
 
 
+import com.github.cryptoprice.cryptopricetelegrambot.exception.CommonException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -14,9 +15,25 @@ public interface Command {
      *
      * @param update provided {@link Update} object with all the needed data for command.
      */
-    void execute(Update update);
+    default void execute(Update update) {
+        long chatId;
 
-    void executeWithExceptions(Update update) throws Exception;
+        if (update.hasCallbackQuery()) {
+            chatId = update.getCallbackQuery().getMessage().getChatId();
+        } else if (update.hasMessage() && update.getMessage().hasText()) {
+            chatId = update.getMessage().getChatId();
+        } else {
+            return;
+        }
+
+        try {
+            this.executeWithExceptions(update);
+        } catch (CommonException e) {
+            e.handleMessage(chatId);
+        }
+    }
+
+    void executeWithExceptions(Update update) throws CommonException;
 
     CommandName getCommandName();
 

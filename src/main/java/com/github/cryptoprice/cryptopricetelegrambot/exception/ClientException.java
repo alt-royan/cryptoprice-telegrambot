@@ -2,20 +2,24 @@ package com.github.cryptoprice.cryptopricetelegrambot.exception;
 
 import lombok.Getter;
 
-public class ClientException extends Exception {
-    private static final long serialVersionUID = 1L;
+/**
+ * Exception throws when receives a client error from exchange
+ */
+@Getter
+public class ClientException extends CommonException {
 
-    @Getter
     private final int errorCode;
+    private final String message;
 
     public ClientException(String message) {
-        super(message);
+        super();
+        this.message = message;
         this.errorCode = 0;
     }
 
     public ClientException(String message, int errorCode) {
-        super(message);
+        super();
+        this.message = message;
         this.errorCode = errorCode;
     }
-
 }
