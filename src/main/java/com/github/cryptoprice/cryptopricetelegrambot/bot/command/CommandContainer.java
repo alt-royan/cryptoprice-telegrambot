@@ -1,6 +1,6 @@
 package com.github.cryptoprice.cryptopricetelegrambot.bot.command;
 
-import com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.UnknownCommand;
+import com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.UnknownCommand;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

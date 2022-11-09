@@ -1,4 +1,4 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.price;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.price;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.price.PriceCommand.TextMessages.*;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.price.PriceCommand.TextMessages.*;
 
 
 @Component

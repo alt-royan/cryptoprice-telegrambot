@@ -1,4 +1,4 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.favourites;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.notification;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
@@ -12,12 +12,12 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.favourites.FavouritesCommand.TextMessages.*;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.notification.NotificationsCommand.TextMessages.*;
 
 
 @Component
 @RequiredArgsConstructor
-public class FavouritesCommand implements Command {
+public class NotificationsCommand implements Command {
 
     private final BotService botService;
 
@@ -52,27 +52,33 @@ public class FavouritesCommand implements Command {
         }
 
         if (text.contentEquals(getCommandName().getCommandIdentifier())) {
-            var favourites = botService.getFavouriteCoins(chatId);
+            var notifications = botService.getActiveNotifications(chatId);
 
-            if (favourites.isEmpty()) {
+            if (notifications.isEmpty()) {
                 List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
                 keyboard.add(List.of(InlineKeyboardButton.builder()
-                        .text(ADD_FAVOURITE)
-                        .callbackData(ADD_FAVOURITE_CALLBACK)
+                        .text(CREATE_NOTIFICATION)
+                        .callbackData(CREATE_NOTIFICATION_CALLBACK)
                         .build()));
-                editOrSend(chatId, messageId, isCallback, NO_FAVOURITES, keyboard);
+                editOrSend(chatId, messageId, isCallback, NO_ACTIVE_NOTIFICATIONS, keyboard);
             } else {
-                var response = new StringBuilder("Избранные криптовалюты:\n\n");
-                for (String f : favourites) {
-                    response.append(f.toUpperCase()).append(" ");
+                var response = new StringBuilder();
+                for (int i = 0; i < notifications.size(); i++) {
+                    var n = notifications.get(i);
+                    response.append(i + 1).append(". ")
+                            .append(n.getCoinCode().toUpperCase()).append(" ")
+                            .append(n.getType().getSign()).append(" ")
+                            .append(n.getTriggeredPrice()).append(" ")
+                            .append(n.getCurrency().toString().toUpperCase()).append("\n");
+
                 }
                 List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
                 keyboard.add(List.of(InlineKeyboardButton.builder()
-                        .text(ADD_FAVOURITE)
-                        .callbackData(ADD_FAVOURITE_CALLBACK)
+                        .text(CREATE_NOTIFICATION)
+                        .callbackData(CREATE_NOTIFICATION_CALLBACK)
                         .build(), InlineKeyboardButton.builder()
-                        .text(DELETE_FAVOURITE)
-                        .callbackData(DELETE_FAVOURITE_CALLBACK)
+                        .text(DELETE_NOTIFICATION)
+                        .callbackData(DELETE_NOTIFICATION_CALLBACK)
                         .build()));
                 editOrSend(chatId, messageId, isCallback, response.toString(), keyboard);
             }
@@ -89,16 +95,16 @@ public class FavouritesCommand implements Command {
 
     @Override
     public CommandName getCommandName() {
-        return CommandName.FAVOURITES;
+        return CommandName.NOTIFICATIONS;
     }
 
     static class TextMessages {
-        public final static String NO_FAVOURITES = "У вас нет избранных криптовалют";
+        public final static String NO_ACTIVE_NOTIFICATIONS = "У вас нет активных уведомлений";
 
         public final static String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
-        public final static String ADD_FAVOURITE = "Добавить";
-        public final static String ADD_FAVOURITE_CALLBACK = "/favouriteAdd";
-        public final static String DELETE_FAVOURITE = "Удалить";
-        public final static String DELETE_FAVOURITE_CALLBACK = "/favouriteRemove";
+        public final static String CREATE_NOTIFICATION = "Создать";
+        public final static String CREATE_NOTIFICATION_CALLBACK = "/notificationCreate";
+        public final static String DELETE_NOTIFICATION = "Удалить";
+        public final static String DELETE_NOTIFICATION_CALLBACK = "/notificationDelete";
     }
 }

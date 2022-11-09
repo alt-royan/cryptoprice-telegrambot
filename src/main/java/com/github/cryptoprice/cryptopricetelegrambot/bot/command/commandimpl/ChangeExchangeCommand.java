@@ -1,8 +1,9 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.notification;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.WrongCommandFormatException;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
@@ -12,18 +13,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.notification.NotificationDeleteCommand.TextMessages.*;
-
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.ChangeExchangeCommand.TextMessages.*;
 
 @Component
 @RequiredArgsConstructor
-public class NotificationDeleteCommand implements Command {
+public class ChangeExchangeCommand implements Command {
 
     private final BotService botService;
-
-    private final String requestRegex = "/notificationDelete \\d*";
 
     @Override
     public void execute(Update update) {
@@ -38,14 +35,14 @@ public class NotificationDeleteCommand implements Command {
 
         try {
             this.executeWithExceptions(update);
-        } catch (WrongCommandFormatException e) {
-            if (e.getEditableMessageId() != null) {
-                MessageSender.editMessage(chatId, e.getEditableMessageId(), WRONG_DELETE_FORMAT);
-            } else {
-                MessageSender.sendMessage(chatId, WRONG_DELETE_FORMAT);
-            }
-        } catch (RuntimeException ex) {
+        } catch (RuntimeException e) {
             MessageSender.sendMessage(update.getMessage().getChatId(), TRY_AGAIN);
+        } catch (WrongCommandFormatException ex) {
+            if (ex.getEditableMessageId() != null) {
+                MessageSender.editMessage(chatId, ex.getEditableMessageId(), WRONG_EXCHANGE);
+            } else {
+                MessageSender.sendMessage(chatId, WRONG_EXCHANGE);
+            }
         }
     }
 
@@ -71,21 +68,25 @@ public class NotificationDeleteCommand implements Command {
         }
 
         if (text.contentEquals(getCommandName().getCommandIdentifier())) {
-            var notifications = botService.getActiveNotifications(chatId);
+            var exchange = botService.getExchange(chatId);
             List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-            notifications.forEach(n -> keyboard.add(List.of(InlineKeyboardButton.builder()
-                    .text(String.format("%s %s %f %s", n.getCoinCode(), n.getType().getSign(), n.getTriggeredPrice(), n.getCurrency().toString()))
-                    .callbackData(String.format(DELETE_NOTIFICATION_CALLBACK, n.getId()))
-                    .build())));
-
-            editOrSend(chatId, messageId, isCallback, DELETE_INIT_MESSAGE, keyboard);
-        } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
-            if (!Pattern.matches(requestRegex, text)) {
-                throw new WrongCommandFormatException(messageId);
+            for (Exchange ex : Exchange.values()) {
+                keyboard.add(List.of(InlineKeyboardButton.builder()
+                        .text(ex.getName())
+                        .callbackData(getCommandName().getCommandIdentifier() + " " + ex)
+                        .build()));
             }
-            var notificationId = Long.parseLong(text.split(" ")[1]);
-            botService.removeNotification(chatId, notificationId);
-            editOrSend(chatId, messageId, isCallback, NOTIFICATION_DELETED);
+            editOrSend(chatId, messageId, isCallback, String.format(CHOOSE_EXCHANGE, exchange.getName()), keyboard);
+        } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
+            var exchangeName = text.substring(getCommandName().getCommandIdentifier().length()).trim();
+            Exchange exchange;
+            try {
+                exchange = Exchange.getEnum(exchangeName);
+            } catch (IllegalArgumentException e) {
+                throw new WrongCommandFormatException();
+            }
+            botService.setExchange(chatId, exchange);
+            editOrSend(chatId, messageId, isCallback, String.format(DONE, exchange.getName()));
         }
     }
 
@@ -107,15 +108,15 @@ public class NotificationDeleteCommand implements Command {
 
     @Override
     public CommandName getCommandName() {
-        return CommandName.NOTIFICATION_DELETE;
+        return CommandName.CHANGE_EXCHANGE;
     }
 
     static class TextMessages {
-        public final static String DELETE_INIT_MESSAGE = "Выберите уведомление для удаления: ";
+        public final static String DONE = "Биржа изменена на: %s";
+        public final static String CHOOSE_EXCHANGE = "Текущая биржа: %s";
+
+        public final static String WRONG_EXCHANGE = "Такая биржа не поддерживается";
 
         public final static String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
-        public final static String NOTIFICATION_DELETED = "Уведомление удалено";
-        public final static String DELETE_NOTIFICATION_CALLBACK = "/notificationDelete %d";
-        public static final String WRONG_DELETE_FORMAT = "Неверный формат команды /notificationDelete";
     }
 }

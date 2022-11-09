@@ -1,4 +1,4 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandContainer;

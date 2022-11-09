@@ -1,4 +1,4 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.notification;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.notification;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
@@ -8,14 +8,9 @@ import com.github.cryptoprice.cryptopricetelegrambot.service.common.CommandCache
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.util.List;
-
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.notification.NotificationCreateCommand.TextMessages.*;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.notification.NotificationCreateCommand.TextMessages.*;
 
 
 @Component
@@ -39,11 +34,7 @@ public class NotificationCreateCommand implements Command {
         try {
             this.executeWithExceptions(update);
         } catch (NoCoinOnExchangeException e) {
-            if (e.getEditableMessageId() != null) {
-                MessageSender.editMessage(chatId, e.getEditableMessageId(), String.format(NO_COIN_ON_EXCHANGE, e.getCoinCode(), e.getExchange().getName()));
-            } else {
-                MessageSender.sendMessage(chatId, String.format(NO_COIN_ON_EXCHANGE, e.getCoinCode(), e.getExchange().getName()));
-            }
+            editOrSend(chatId, e.getEditableMessageId(), e.hasEditableMessage(), String.format(NO_COIN_ON_EXCHANGE, e.getCoinCode(), e.getExchange().getName()));
         } catch (NotificationConditionAlreadyDoneException e) {
             var notification = e.getNotification();
             if (e.getEditableMessageId() != null) {
@@ -116,27 +107,19 @@ public class NotificationCreateCommand implements Command {
         }
     }
 
-    private void editOrSend(long chatId, int messageId, boolean isCallback, String text, List<List<InlineKeyboardButton>> keyboard) {
-        if (isCallback) {
-            MessageSender.editMessage(chatId, messageId, text, keyboard);
-        } else {
-            MessageSender.sendMessage(chatId, text, keyboard);
-        }
-    }
-
     @Override
     public CommandName getCommandName() {
         return CommandName.NOTIFICATION_CREATE;
     }
 
     static class TextMessages {
-        public final static String CREATE_NOTIFICATION_MESSAGE = "Чтобы создать новое уведомление, отправьте сообщение в формате\n" +
+        public static final String CREATE_NOTIFICATION_MESSAGE = "Чтобы создать новое уведомление, отправьте сообщение в формате\n" +
                 "{криптовалюта} <(>) {цена} {валюта}\n\n" +
                 "Например:\n" +
                 "BTC > 23000.12 USDT";
 
-        public final static String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
-        public final static String NOTIFICATION_CREATED = "Уведомление создано";
+        public static final String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
+        public static final String NOTIFICATION_CREATED = "Уведомление создано";
         public static final String WRONG_NOTIFICATION_FORMAT = "Неверный формат уведомления";
         public static final String NOT_SUPPORTED_CURRENCY = "Данная валюта %s не поддерживается";
         public static final String NO_COIN_ON_EXCHANGE = "Такой монеты %s нет на бирже %s. Попробуйте сменить биржу или выберите другую криптовалюту";

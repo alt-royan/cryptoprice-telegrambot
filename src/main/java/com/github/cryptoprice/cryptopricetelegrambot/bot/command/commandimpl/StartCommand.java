@@ -1,4 +1,4 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
@@ -8,8 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.StartCommand.TextMessages.START_MESSAGE;
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.StartCommand.TextMessages.TRY_AGAIN;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.StartCommand.TextMessages.START_MESSAGE;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.StartCommand.TextMessages.TRY_AGAIN;
 
 @Component
 @RequiredArgsConstructor

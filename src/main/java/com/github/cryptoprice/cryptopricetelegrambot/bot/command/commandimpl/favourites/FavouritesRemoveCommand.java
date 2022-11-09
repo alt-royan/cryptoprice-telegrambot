@@ -1,4 +1,4 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.favourites;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.favourites;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
@@ -14,16 +14,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.favourites.FavouriteRemoveCommand.TextMessages.*;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.favourites.FavouritesRemoveCommand.TextMessages.*;
 
 
 @Component
 @RequiredArgsConstructor
-public class FavouriteRemoveCommand implements Command {
+public class FavouritesRemoveCommand implements Command {
 
     private final BotService botService;
 
-    private final String requestRegex = "/favouriteRemove [a-zA-Z]*";
+    private final String requestRegex = "/favouritesRemove [a-zA-Z]*";
 
     @Override
     public void execute(Update update) {
@@ -115,7 +115,7 @@ public class FavouriteRemoveCommand implements Command {
 
         public final static String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
         public final static String FAVOURITE_DELETED = "%s убрано из избранных";
-        public final static String DELETE_FAVOURITE_CALLBACK = "/favouriteRemove %s";
-        public static final String WRONG_DELETE_FORMAT = "Неверный формат команды /favouriteRemove";
+        public final static String DELETE_FAVOURITE_CALLBACK = "/favouritesRemove %s";
+        public static final String WRONG_DELETE_FORMAT = "Неверный формат команды /favouritesRemove";
     }
 }

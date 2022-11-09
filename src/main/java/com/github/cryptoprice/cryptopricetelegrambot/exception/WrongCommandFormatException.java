@@ -1,21 +1,12 @@
 package com.github.cryptoprice.cryptopricetelegrambot.exception;
 
-import lombok.Getter;
-
-public class WrongCommandFormatException extends Exception {
-
-    private static final String MSG = "Invalid format";
-
-    @Getter
-    private final Integer editableMessageId;
+public class WrongCommandFormatException extends EditableMessageException {
 
     public WrongCommandFormatException() {
-        super(MSG);
-        this.editableMessageId = null;
+        super();
     }
 
     public WrongCommandFormatException(Integer editableMessageId) {
-        super(MSG);
-        this.editableMessageId = editableMessageId;
+        super(editableMessageId);
     }
 }

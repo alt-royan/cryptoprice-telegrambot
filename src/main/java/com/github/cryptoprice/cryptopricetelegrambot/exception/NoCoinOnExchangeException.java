@@ -4,23 +4,20 @@ import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
 import lombok.Getter;
 
 @Getter
-public class NoCoinOnExchangeException extends Exception {
+public class NoCoinOnExchangeException extends EditableMessageException {
 
     private final String coinCode;
     private final Exchange exchange;
-    private final Integer editableMessageId;
 
     public NoCoinOnExchangeException(String coinCode, Exchange exchange) {
         super();
         this.coinCode = coinCode;
         this.exchange = exchange;
-        this.editableMessageId = null;
     }
 
     public NoCoinOnExchangeException(String coinCode, Exchange exchange, Integer editableMessageId) {
-        super();
+        super(editableMessageId);
         this.coinCode = coinCode;
         this.exchange = exchange;
-        this.editableMessageId = editableMessageId;
     }
 }

@@ -14,8 +14,9 @@ public enum CommandName {
     NOTIFICATION_CREATE("/notificationCreate"),
     NOTIFICATION_DELETE("/notificationDelete"),
     FAVOURITES("/favourites"),
-    FAVOURITES_ADD("/favouriteAdd"),
-    FAVOURITES_REMOVE("/favouriteRemove"),
+    FAVOURITES_ADD("/favouritesAdd"),
+    FAVOURITES_REMOVE("/favouritesRemove"),
+    PRICE_FAVOURITES("/priceFavourites"),
     CHANGE_EXCHANGE("/changeExchange"),
     NONE("");
 
