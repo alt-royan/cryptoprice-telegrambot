@@ -2,11 +2,13 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.UnknownCommand;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 
-@Component
+@Service
+@Slf4j
 @RequiredArgsConstructor
 public class CommandContainer {
 
@@ -20,6 +22,7 @@ public class CommandContainer {
 
     public void registerCommand(Command command) {
         commandMap.put(command.getCommandName().getCommandIdentifier(), command);
+        log.info("Command " + command.getClass().getSimpleName() + " was registered");
     }
 
 }

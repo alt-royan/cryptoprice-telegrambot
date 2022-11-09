@@ -22,11 +22,11 @@ public class UnknownCommand implements Command {
         } else {
             return;
         }
-        MessageSender.sendMessage(chatId, UNKNOWN_MESSAGE, false);
+        MessageSender.sendMessage(chatId, UNKNOWN_MESSAGE);
     }
 
     @Override
-    public void executeExceptionHandling(Update update) {
+    public void executeWithExceptions(Update update) throws Exception {
 
     }
 

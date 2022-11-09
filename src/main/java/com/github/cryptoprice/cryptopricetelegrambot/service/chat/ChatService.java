@@ -21,7 +21,7 @@ public class ChatService {
     private final ChatRepository repository;
 
     @Transactional
-    public void registerChat(Long chatId) {
+    public Chat registerChat(Long chatId) {
         Chat chat;
         var savedChat = repository.findByChatId(chatId);
         if (savedChat.isPresent()) {
@@ -34,7 +34,7 @@ public class ChatService {
             chat.setStatus(ChatStatus.ACTIVE);
             chat.setFavoriteCoins(DEFAULT_FAVOURITE_COINS);
         }
-        repository.save(chat);
+        return repository.save(chat);
     }
 
     @Transactional

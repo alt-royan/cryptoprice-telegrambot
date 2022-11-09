@@ -35,24 +35,24 @@ public class TelegramCryptoPriceBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+        String text;
+        long chatId;
+
         if (update.hasCallbackQuery()) {
-            String data = update.getCallbackQuery().getData();
-            Long chatId = update.getCallbackQuery().getMessage().getChatId();
-            if (data.startsWith(COMMAND_PREFIX)) {
-                commandContainer.retrieveCommand(data.split(" ")[0]).executeExceptionHandling(update);
-            } else {
-                var currentCommand = commandCache.getCurrentCommand(chatId).getCommandIdentifier();
-                commandContainer.retrieveCommand(currentCommand).executeExceptionHandling(update);
-            }
+            text = update.getCallbackQuery().getData().trim();
+            chatId = update.getCallbackQuery().getMessage().getChatId();
         } else if (update.hasMessage() && update.getMessage().hasText()) {
-            String message = update.getMessage().getText();
-            Long chatId = update.getMessage().getChatId();
-            if (message.startsWith(COMMAND_PREFIX)) {
-                commandContainer.retrieveCommand(message.split(" ")[0]).executeExceptionHandling(update);
-            } else {
-                var currentCommand = commandCache.getCurrentCommand(chatId).getCommandIdentifier();
-                commandContainer.retrieveCommand(currentCommand).executeExceptionHandling(update);
-            }
+            text = update.getMessage().getText().trim();
+            chatId = update.getMessage().getChatId();
+        } else {
+            return;
+        }
+
+        if (text.startsWith(COMMAND_PREFIX)) {
+            commandContainer.retrieveCommand(text.split(" ")[0]).execute(update);
+        } else {
+            var currentCommand = commandCache.getCurrentCommand(chatId).getCommandIdentifier();
+            commandContainer.retrieveCommand(currentCommand).execute(update);
         }
     }
 }

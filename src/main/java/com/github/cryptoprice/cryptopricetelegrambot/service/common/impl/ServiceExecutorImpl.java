@@ -3,6 +3,7 @@ package com.github.cryptoprice.cryptopricetelegrambot.service.common.impl;
 import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPrice24hDto;
 import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPriceDto;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.*;
+import com.github.cryptoprice.cryptopricetelegrambot.model.Chat;
 import com.github.cryptoprice.cryptopricetelegrambot.model.Notification;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
@@ -37,6 +38,16 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
         return exchangeMap.get(chat.getExchange());
     }
 
+    private Chat checkChatIsRegistered(Long chatId) {
+        Chat chat;
+        try {
+            chat = chatService.getByChatId(chatId);
+        } catch (NotFoundException e) {
+            chat = chatService.registerChat(chatId);
+        }
+        return chat;
+    }
+
     @Override
     public void registerService(ExchangeService service) {
         exchangeMap.put(service.getExchange(), service);
@@ -51,6 +62,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
 
     @Override
     public CoinPrice24hDto getCoinPrice24h(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException {
+        checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
         try {
             return exchangeService.getCoinPriceFor24h(coinCode, currency);
@@ -61,6 +73,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
 
     @Override
     public CoinPriceDto getCoinPrice(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException {
+        checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
         try {
             return exchangeService.getCoinPrice(coinCode, currency);
@@ -74,7 +87,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
      */
     @Override
     public Map<Exchange, Object> getPriceAllExchanges(Long chatId, String coinCode, Currency currency) {
-        chatService.getByChatId(chatId);
+        checkChatIsRegistered(chatId);
         Map<Exchange, Object> coinPriceMap = new HashMap<>();
         for (ExchangeService service : exchangeMap.values()) {
             try {
@@ -95,7 +108,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
      */
     @Override
     public Map<String, Object> getFavouriteCoinsPrice(Long chatId, Currency currency) {
-        var chat = chatService.getByChatId(chatId);
+        var chat = checkChatIsRegistered(chatId);
         Map<String, Object> coinPriceMap = new HashMap<>();
         var favouriteCoins = chat.getFavoriteCoins();
         var exchangeService = getExchangeService(chat.getChatId());
@@ -117,19 +130,20 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
 
     @Override
     public void setExchange(Long chatId, Exchange exchange) {
+        checkChatIsRegistered(chatId);
         chatService.changeExchange(chatId, exchange);
     }
 
     @Override
     public Exchange getExchange(Long chatId) {
-        var chat = chatService.getByChatId(chatId);
+        var chat = checkChatIsRegistered(chatId);
         return chat.getExchange();
     }
 
     @Override
     public void addFavouriteCoins(Long chatId, List<String> coinCodes) throws ExchangeServerException, NoCoinOnExchangeException {
-        var chat = chatService.getByChatId(chatId);
-        var exchangeService = getExchangeService(chat.getChatId());
+        checkChatIsRegistered(chatId);
+        var exchangeService = getExchangeService(chatId);
         for (String coinCode : coinCodes) {
             try {
                 exchangeService.getCoinPrice(coinCode, Currency.USDT);
@@ -137,23 +151,25 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
                 throw new NoCoinOnExchangeException(coinCode.toUpperCase(), exchangeService.getExchange());
             }
         }
-        chatService.addFavouriteCoins(chat.getId(), coinCodes);
+        chatService.addFavouriteCoins(chatId, coinCodes);
     }
 
 
     @Override
     public void removeFavouriteCoin(Long chatId, String coinCode) {
+        checkChatIsRegistered(chatId);
         chatService.removeFavouriteCoin(chatId, coinCode);
     }
 
     @Override
     public List<String> getFavouriteCoins(Long chatId) {
-        var chat = chatService.getByChatId(chatId);
+        var chat = checkChatIsRegistered(chatId);
         return chat.getFavoriteCoins();
     }
 
     @Override
     public Notification createNotification(Long chatId, String request) throws WrongCommandFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException {
+        checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
         var notification = NotificationParser.parseNotificationCreateRequest(request);
         notification.setChatId(chatId);
@@ -170,28 +186,27 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
         return notificationService.createNotification(notification);
     }
 
-    //done
     @Override
     public void removeNotification(Long chatId, Long notificationId) {
-        chatService.getByChatId(chatId);
+        checkChatIsRegistered(chatId);
         notificationService.deleteNotification(notificationId);
     }
 
-    //done
     @Override
     public List<Notification> getActiveNotifications(Long chatId) {
-        var chat = chatService.getByChatId(chatId);
-        return notificationService.getAllNotifications(chat.getChatId());
+        checkChatIsRegistered(chatId);
+        return notificationService.getAllNotifications(chatId);
     }
 
     @Override
     public void stopChat(Long chatId) {
+        checkChatIsRegistered(chatId);
         chatService.stopChat(chatId);
     }
 
     @Override
     public void deleteChat(Long chatId) {
-        notificationService.deleteAllNotification(chatId);
         chatService.deleteChat(chatId);
+        notificationService.deleteAllNotification(chatId);
     }
 }

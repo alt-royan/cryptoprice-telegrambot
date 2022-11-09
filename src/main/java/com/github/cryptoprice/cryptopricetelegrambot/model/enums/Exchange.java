@@ -12,4 +12,10 @@ public enum Exchange {
     public String getName() {
         return name;
     }
+
+    public static Exchange getEnum(String value) {
+        for (Exchange v : values())
+            if (v.getName().equalsIgnoreCase(value)) return v;
+        throw new IllegalArgumentException();
+    }
 }

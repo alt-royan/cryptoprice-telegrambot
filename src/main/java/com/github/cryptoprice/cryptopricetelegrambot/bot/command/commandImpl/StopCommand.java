@@ -13,11 +13,11 @@ public class StopCommand implements Command {
 
     @Override
     public void execute(Update update) {
-        MessageSender.sendMessage(update.getMessage().getChatId(), STOP_MESSAGE, false);
+        MessageSender.sendMessage(update.getMessage().getChatId(), STOP_MESSAGE);
     }
 
     @Override
-    public void executeExceptionHandling(Update update) {
+    public void executeWithExceptions(Update update) throws Exception {
 
     }
 

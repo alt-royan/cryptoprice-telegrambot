@@ -1,4 +1,4 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.price;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
@@ -13,12 +13,8 @@ import com.github.cryptoprice.cryptopricetelegrambot.service.common.CommandCache
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.util.ArrayList;
@@ -26,7 +22,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.PriceCommand.TextMessages.*;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandImpl.price.PriceCommand.TextMessages.*;
 
 
 @Component
@@ -39,18 +35,8 @@ public class PriceCommand implements Command {
     private static final String requestRegex = "/price [a-zA-Z]*_[a-zA-Z]*";
     private static final int BUTTONS_IN_LINE = 4;
 
-
     @Override
-    public void execute(Update update) throws Exception {
-        if (update.hasCallbackQuery()) {
-            handleCallbackQuery(update.getCallbackQuery());
-        } else if (update.hasMessage() && update.getMessage().hasText()) {
-            handleTextMessage(update.getMessage());
-        }
-    }
-
-    @Override
-    public void executeExceptionHandling(Update update) {
+    public void execute(Update update) {
         long chatId;
         if (update.hasCallbackQuery()) {
             chatId = update.getCallbackQuery().getMessage().getChatId();
@@ -61,46 +47,54 @@ public class PriceCommand implements Command {
         }
 
         try {
-            this.execute(update);
-        } catch (Exception e) {
-            if (e instanceof WrongCommandFormatException) {
-                var ex = (WrongCommandFormatException) e;
-                if (ex.getEditableMessageId() != null) {
-                    MessageSender.editMessage(chatId, ex.getEditableMessageId(), WRONG_PRICE_FORMAT, false);
-                } else {
-                    MessageSender.sendMessage(chatId, WRONG_PRICE_FORMAT, false);
-                }
-            } else if (e instanceof NotSupportedCurrencyException) {
-                var ex = (NotSupportedCurrencyException) e;
-                if (ex.getEditableMessageId() != null) {
-                    MessageSender.editMessage(chatId, ex.getEditableMessageId(), String.format(NOT_SUPPORTED_CURRENCY, ex.getCurrency()), false);
-                } else {
-                    MessageSender.sendMessage(chatId, String.format(NOT_SUPPORTED_CURRENCY, ex.getCurrency()), false);
-                }
-            } else if (e instanceof NoCoinOnExchangeException) {
-                var ex = (NoCoinOnExchangeException) e;
-                if (ex.getEditableMessageId() != null) {
-                    MessageSender.editMessage(chatId, ex.getEditableMessageId(), String.format(NO_COIN_ON_EXCHANGE, ex.getCoinCode(), ex.getExchange().getName()), false);
-                } else {
-                    MessageSender.sendMessage(chatId, String.format(NO_COIN_ON_EXCHANGE, ex.getCoinCode(), ex.getExchange().getName()), false);
-                }
-            } else if (e instanceof ExchangeServerException) {
-                MessageSender.sendMessage(chatId, EXCHANGE_SERVER_ERROR, false);
+            this.executeWithExceptions(update);
+        } catch (WrongCommandFormatException ex) {
+            if (ex.getEditableMessageId() != null) {
+                MessageSender.editMessage(chatId, ex.getEditableMessageId(), WRONG_PRICE_FORMAT);
             } else {
-                e.printStackTrace();
+                MessageSender.sendMessage(chatId, WRONG_PRICE_FORMAT);
             }
+        } catch (NoCoinOnExchangeException ex) {
+            if (ex.getEditableMessageId() != null) {
+                MessageSender.editMessage(chatId, ex.getEditableMessageId(), String.format(NO_COIN_ON_EXCHANGE, ex.getCoinCode(), ex.getExchange().getName()));
+            } else {
+                MessageSender.sendMessage(chatId, String.format(NO_COIN_ON_EXCHANGE, ex.getCoinCode(), ex.getExchange().getName()));
+            }
+        } catch (NotSupportedCurrencyException ex) {
+            if (ex.getEditableMessageId() != null) {
+                MessageSender.editMessage(chatId, ex.getEditableMessageId(), String.format(NOT_SUPPORTED_CURRENCY, ex.getCurrency()));
+            } else {
+                MessageSender.sendMessage(chatId, String.format(NOT_SUPPORTED_CURRENCY, ex.getCurrency()));
+            }
+        } catch (ExchangeServerException ex) {
+            MessageSender.sendMessage(chatId, EXCHANGE_SERVER_ERROR);
+        } catch (RuntimeException ex) {
+            MessageSender.sendMessage(update.getMessage().getChatId(), TRY_AGAIN);
         }
     }
 
-    private void handleTextMessage(Message message) throws WrongCommandFormatException, NotSupportedCurrencyException, NoCoinOnExchangeException, ExchangeServerException {
-        String text = message.getText();
-        long chatId = message.getChatId();
+    @Override
+    public void executeWithExceptions(Update update) throws NoCoinOnExchangeException, WrongCommandFormatException, NotSupportedCurrencyException, ExchangeServerException {
+        String text;
+        long chatId;
+        int messageId;
+        boolean isCallback;
+
+        if (update.hasCallbackQuery()) {
+            text = update.getCallbackQuery().getData().trim();
+            chatId = update.getCallbackQuery().getMessage().getChatId();
+            messageId = update.getCallbackQuery().getMessage().getMessageId();
+            isCallback = true;
+        } else if (update.hasMessage() && update.getMessage().hasText()) {
+            text = update.getMessage().getText().trim();
+            chatId = update.getMessage().getChatId();
+            messageId = update.getMessage().getMessageId();
+            isCallback = false;
+        } else {
+            return;
+        }
 
         if (text.contentEquals(getCommandName().getCommandIdentifier())) {
-            var sendMessage = new SendMessage();
-            sendMessage.setChatId(chatId);
-            sendMessage.setText(CHOOSE_CRYPTO);
-
             List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
             var favouriteCoins = botService.getFavouriteCoins(chatId);
             for (int i = 0; i < favouriteCoins.size(); i = i + BUTTONS_IN_LINE) {
@@ -117,76 +111,29 @@ public class PriceCommand implements Command {
                     .callbackData(ANOTHER_COIN_CALLBACK)
                     .build()));
 
-            MessageSender.sendMessage(sendMessage, keyboard);
+            editOrSend(chatId, messageId, isCallback, CHOOSE_CRYPTO, keyboard);
             commandCacheService.setCurrentCommand(chatId, getCommandName());
         } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
             if (!Pattern.matches(requestRegex, text)) {
                 throw new WrongCommandFormatException();
             }
-            var waitMessage = MessageSender.sendMessage(chatId, WATCH_PRICE_WAIT, false);
-
-            var coinPrice24h = getCoinPriceFromRequest(text, chatId, waitMessage.getMessageId());
-
-            MessageSender.editMessage(chatId, waitMessage.getMessageId(), coinPrice24h.toString(), false);
-        } else {
-            var keyboard = createKeyboardForCurrencies(text);
-
-            var sendMessage = SendMessage.builder()
-                    .chatId(chatId)
-                    .text(CHOOSE_CURRENCY)
-                    .build();
-
-            MessageSender.sendMessage(sendMessage, keyboard);
-            commandCacheService.setCurrentCommandNone(chatId);
-        }
-    }
-
-    private void handleCallbackQuery(CallbackQuery callbackQuery) throws WrongCommandFormatException, NotSupportedCurrencyException, NoCoinOnExchangeException, ExchangeServerException {
-        String text = callbackQuery.getData();
-        long chatId = callbackQuery.getMessage().getChatId();
-        int messageId = callbackQuery.getMessage().getMessageId();
-
-        if (text.equals(ANOTHER_COIN_CALLBACK)) {
-            var editMessage = EditMessageText.builder()
-                    .messageId(messageId)
-                    .chatId(chatId)
-                    .text(ANOTHER_COIN_CHOOSE_TEXT)
-                    .build();
-            MessageSender.editMessage(editMessage);
-        } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
-            if (!Pattern.matches(requestRegex, text)) {
-                throw new WrongCommandFormatException();
-            }
-            var editMessage1 = EditMessageText.builder()
-                    .messageId(messageId)
-                    .chatId(chatId)
-                    .text(WATCH_PRICE_WAIT)
-                    .build();
-            MessageSender.editMessage(editMessage1);
+            var waitMessage = editOrSend(chatId, messageId, isCallback, WATCH_PRICE_WAIT);
 
             var coinPrice24h = getCoinPriceFromRequest(text, chatId, messageId);
 
-            var editMessage2 = EditMessageText.builder()
-                    .messageId(messageId)
-                    .chatId(chatId)
-                    .text(coinPrice24h.toString())
-                    .build();
-            MessageSender.editMessage(editMessage2);
+            MessageSender.editMessage(chatId, waitMessage.getMessageId(), coinPrice24h.toString());
+            commandCacheService.clearCache(chatId);
+        } else if (isCallback && text.contentEquals(ANOTHER_COIN_CALLBACK)) {
+            MessageSender.editMessage(chatId, messageId, ANOTHER_COIN_CHOOSE_TEXT);
         } else {
             var keyboard = createKeyboardForCurrencies(text);
-
-            var editMessage = EditMessageText.builder()
-                    .messageId(messageId)
-                    .chatId(chatId)
-                    .text(CHOOSE_CURRENCY)
-                    .replyMarkup(InlineKeyboardMarkup.builder().keyboard(keyboard).build())
-                    .build();
-            MessageSender.editMessage(editMessage);
-            commandCacheService.setCurrentCommandNone(chatId);
+            editOrSend(chatId, messageId, isCallback, CHOOSE_CURRENCY, keyboard);
+            commandCacheService.clearCache(chatId);
         }
     }
 
-    private CoinPrice24hDto getCoinPriceFromRequest(String text, long chatId, Integer messageId) throws NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException {
+    private CoinPrice24hDto getCoinPriceFromRequest(String text, long chatId, Integer messageId) throws
+            NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException {
         var symbol = text.split(" ")[1].split("_");
         var coinCode = symbol[0];
         Currency currency;
@@ -226,6 +173,23 @@ public class PriceCommand implements Command {
         return keyboard;
     }
 
+    private Message editOrSend(long chatId, int messageId, boolean isCallback, String text) {
+        if (isCallback) {
+            MessageSender.editMessage(chatId, messageId, text);
+            return new Message();
+        } else {
+            return MessageSender.sendMessage(chatId, text);
+        }
+    }
+
+    private void editOrSend(long chatId, int messageId, boolean isCallback, String text, List<List<InlineKeyboardButton>> keyboard) {
+        if (isCallback) {
+            MessageSender.editMessage(chatId, messageId, text, keyboard);
+        } else {
+            MessageSender.sendMessage(chatId, text, keyboard);
+        }
+    }
+
 
     @Override
     public CommandName getCommandName() {
@@ -243,5 +207,6 @@ public class PriceCommand implements Command {
         public static final String NOT_SUPPORTED_CURRENCY = "Данная валюта %s не поддерживается";
         public static final String NO_COIN_ON_EXCHANGE = "Такой монеты %s нет на бирже %s. Попробуйте сменить биржу или выберите другую криптовалюту";
         public static final String EXCHANGE_SERVER_ERROR = "Ошибка сервера биржи. Попробуйте позже";
+        public final static String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
     }
 }

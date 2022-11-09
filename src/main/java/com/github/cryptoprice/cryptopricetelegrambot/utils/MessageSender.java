@@ -21,12 +21,34 @@ public class MessageSender {
     private MessageSender() {
     }
 
-    public static Message sendMessage(Long chatId, String message, boolean html) {
+    public static Message sendMessage(Long chatId, String message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
-        sendMessage.enableHtml(html);
         sendMessage.setText(message);
 
+        try {
+            return bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+            return new Message();
+        }
+    }
+
+    public static Message sendMessage(Long chatId, String message, List<List<InlineKeyboardButton>> keyboard) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        sendMessage.setReplyMarkup(InlineKeyboardMarkup.builder().keyboard(keyboard).build());
+        sendMessage.setText(message);
+
+        try {
+            return bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+            return new Message();
+        }
+    }
+
+    public static Message sendMessage(SendMessage sendMessage) {
         try {
             return bot.execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -44,13 +66,12 @@ public class MessageSender {
         }
     }
 
-    public static void editMessage(Long chatId, Integer messageId, String text, boolean html) {
+    public static void editMessage(Long chatId, Integer messageId, String text) {
         var editMessage = EditMessageText.builder()
                 .messageId(messageId)
                 .text(text)
                 .chatId(chatId)
                 .build();
-        editMessage.enableHtml(html);
         try {
             bot.execute(editMessage);
         } catch (TelegramApiException e) {
@@ -58,16 +79,18 @@ public class MessageSender {
         }
     }
 
-    public static Message sendMessage(SendMessage sendMessage, List<List<InlineKeyboardButton>> buttons) {
-        InlineKeyboardMarkup markupInline = InlineKeyboardMarkup.builder()
-                .keyboard(buttons)
+    public static void editMessage(Long chatId, Integer messageId, String text, List<List<InlineKeyboardButton>> keyboard) {
+        var editMessage = EditMessageText.builder()
+                .messageId(messageId)
+                .text(text)
+                .replyMarkup(InlineKeyboardMarkup.builder().keyboard(keyboard).build())
+                .chatId(chatId)
                 .build();
-        sendMessage.setReplyMarkup(markupInline);
         try {
-            return bot.execute(sendMessage);
+            bot.execute(editMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
-            return new Message();
         }
     }
+
 }

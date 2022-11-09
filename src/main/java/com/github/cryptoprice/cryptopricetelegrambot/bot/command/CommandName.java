@@ -9,7 +9,14 @@ public enum CommandName {
     STOP("/stop"),
     PRICE("/price"),
     HELP("/help"),
-
+    CANCEL("/cancel"),
+    NOTIFICATIONS("/notifications"),
+    NOTIFICATION_CREATE("/notificationCreate"),
+    NOTIFICATION_DELETE("/notificationDelete"),
+    FAVOURITES("/favourites"),
+    FAVOURITES_ADD("/favouriteAdd"),
+    FAVOURITES_REMOVE("/favouriteRemove"),
+    CHANGE_EXCHANGE("/changeExchange"),
     NONE("");
 
 

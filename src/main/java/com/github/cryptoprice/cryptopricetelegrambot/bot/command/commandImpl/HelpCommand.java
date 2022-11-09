@@ -13,13 +13,14 @@ public class HelpCommand implements Command {
 
     @Override
     public void execute(Update update) {
-        MessageSender.sendMessage(update.getMessage().getChatId(), HELP_MESSAGE, false);
+        MessageSender.sendMessage(update.getMessage().getChatId(), HELP_MESSAGE);
     }
 
     @Override
-    public void executeExceptionHandling(Update update) {
+    public void executeWithExceptions(Update update) throws Exception {
 
     }
+
 
     @Override
     public CommandName getCommandName() {
