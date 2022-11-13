@@ -12,6 +12,7 @@ import com.github.cryptoprice.cryptopricetelegrambot.dto.binance.TickerPriceDto;
 import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPrice24hDto;
 import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPriceDto;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.ClientException;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.CurrencyEqualsCodeException;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.ExchangeServerException;
 import com.github.cryptoprice.cryptopricetelegrambot.mapper.CoinPrice24hMapper;
 import com.github.cryptoprice.cryptopricetelegrambot.mapper.CoinPriceMapper;
@@ -40,8 +41,14 @@ public class BinanceService implements ExchangeService {
 
     @SneakyThrows(value = {JsonProcessingException.class})
     @Override
-    public List<CoinPriceDto> getCoinPrice(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException {
-        var symbols = convertToSymbols(coinCodes, currency);
+    public List<CoinPriceDto> getCoinPrice(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException, CurrencyEqualsCodeException {
+        List<String> symbols;
+        try {
+            symbols = convertToSymbols(coinCodes, currency);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+            throw new CurrencyEqualsCodeException(e.getMessage());
+        }
 
         LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
         parameters.put("symbols", symbols);
@@ -66,9 +73,14 @@ public class BinanceService implements ExchangeService {
 
     @SneakyThrows(value = {JsonProcessingException.class})
     @Override
-    public List<CoinPrice24hDto> getCoinPriceFor24h(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException {
-        var symbols = convertToSymbols(coinCodes, currency);
-
+    public List<CoinPrice24hDto> getCoinPriceFor24h(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException, CurrencyEqualsCodeException {
+        List<String> symbols;
+        try {
+            symbols = convertToSymbols(coinCodes, currency);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+            throw new CurrencyEqualsCodeException(e.getMessage());
+        }
         LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
         parameters.put("symbols", symbols);
         parameters.put("type", "FULL");
@@ -102,7 +114,7 @@ public class BinanceService implements ExchangeService {
                     var coinCode = code.toUpperCase();
                     var currencyString = currency.toString().toUpperCase();
                     if (coinCode.equals(currencyString)) {
-                        throw new IllegalArgumentException("coinCode and currency can`t be equals");
+                        throw new IllegalArgumentException(coinCode);
                     }
                     return coinCode + currencyString;
                 }).collect(Collectors.toList());

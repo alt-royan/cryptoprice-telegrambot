@@ -2,9 +2,9 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.pr
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.CurrencyEqualsCodeException;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
-import com.github.cryptoprice.cryptopricetelegrambot.service.common.CommandCacheService;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -16,13 +16,9 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 public class PriceFavouritesCommand implements Command {
 
     public final BotService botService;
-    private final CommandCacheService commandCacheService;
-
-    private static final String requestRegex = "/price [a-zA-Z]*_[a-zA-Z]*";
-    private static final int BUTTONS_IN_LINE = 4;
 
     @Override
-    public void executeWithExceptions(Update update) {
+    public void executeWithExceptions(Update update) throws CurrencyEqualsCodeException {
         String text;
         Long chatId;
         Integer messageId;

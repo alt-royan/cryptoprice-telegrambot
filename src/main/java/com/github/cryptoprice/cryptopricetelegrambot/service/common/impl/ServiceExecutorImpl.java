@@ -61,7 +61,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     }
 
     @Override
-    public CoinPrice24hDto getCoinPrice24h(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException {
+    public CoinPrice24hDto getCoinPrice24h(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException, CurrencyEqualsCodeException {
         checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
         try {
@@ -72,7 +72,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     }
 
     @Override
-    public CoinPriceDto getCoinPrice(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException {
+    public CoinPriceDto getCoinPrice(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException, CurrencyEqualsCodeException {
         checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
         try {
@@ -86,7 +86,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
      * Return the map type <{@link Exchange}, {@link Object}> where key is exchange and value can be {@link CoinPrice24hDto} or instance of {@link RuntimeException}
      */
     @Override
-    public Map<Exchange, Object> getPriceAllExchanges(Long chatId, String coinCode, Currency currency) {
+    public Map<Exchange, Object> getPriceAllExchanges(Long chatId, String coinCode, Currency currency) throws CurrencyEqualsCodeException {
         checkChatIsRegistered(chatId);
         Map<Exchange, Object> coinPriceMap = new HashMap<>();
         for (ExchangeService service : exchangeMap.values()) {
@@ -107,7 +107,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
      * Return the map type <{@link String}, {@link Object}> where key is coinCode and value can be {@link CoinPrice24hDto} or {@link RuntimeException}
      */
     @Override
-    public Map<String, Object> getFavouriteCoinsPrice(Long chatId, Currency currency) {
+    public Map<String, Object> getFavouriteCoinsPrice(Long chatId, Currency currency) throws CurrencyEqualsCodeException {
         var chat = checkChatIsRegistered(chatId);
         Map<String, Object> coinPriceMap = new HashMap<>();
         var favouriteCoins = chat.getFavoriteCoins();
@@ -141,7 +141,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     }
 
     @Override
-    public void addFavouriteCoins(Long chatId, List<String> coinCodes) throws ExchangeServerException, NoCoinOnExchangeException {
+    public void addFavouriteCoins(Long chatId, List<String> coinCodes) throws ExchangeServerException, NoCoinOnExchangeException, CurrencyEqualsCodeException {
         checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
         for (String coinCode : coinCodes) {
@@ -168,7 +168,7 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     }
 
     @Override
-    public Notification createNotification(Long chatId, String request) throws WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException {
+    public Notification createNotification(Long chatId, String request) throws WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException, CurrencyEqualsCodeException {
         checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
         var notification = NotificationParser.parseNotificationCreateRequest(request);

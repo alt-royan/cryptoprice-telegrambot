@@ -14,13 +14,13 @@ public interface BotService {
 
     void registerChat(Long chatId);
 
-    CoinPrice24hDto getCoinPrice24h(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException;
+    CoinPrice24hDto getCoinPrice24h(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException, CurrencyEqualsCodeException;
 
-    CoinPriceDto getCoinPrice(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException;
+    CoinPriceDto getCoinPrice(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException, CurrencyEqualsCodeException;
 
-    Map<Exchange, Object> getPriceAllExchanges(Long chatId, String coinCode, Currency currency);
+    Map<Exchange, Object> getPriceAllExchanges(Long chatId, String coinCode, Currency currency) throws CurrencyEqualsCodeException;
 
-    Map<String, Object> getFavouriteCoinsPrice(Long chatId, Currency currency);
+    Map<String, Object> getFavouriteCoinsPrice(Long chatId, Currency currency) throws CurrencyEqualsCodeException;
 
 
     void setExchange(Long chatId, Exchange exchange);
@@ -28,14 +28,14 @@ public interface BotService {
     Exchange getExchange(Long chatId);
 
 
-    void addFavouriteCoins(Long chatId, List<String> coinCodes) throws ExchangeServerException, NoCoinOnExchangeException;
+    void addFavouriteCoins(Long chatId, List<String> coinCodes) throws ExchangeServerException, NoCoinOnExchangeException, CurrencyEqualsCodeException;
 
     void removeFavouriteCoin(Long chatId, String coinCodes);
 
     List<String> getFavouriteCoins(Long chatId);
 
 
-    Notification createNotification(Long chatId, String request) throws WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException;
+    Notification createNotification(Long chatId, String request) throws WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException, CurrencyEqualsCodeException;
 
     void removeNotification(Long chatId, Long notificationId);
 

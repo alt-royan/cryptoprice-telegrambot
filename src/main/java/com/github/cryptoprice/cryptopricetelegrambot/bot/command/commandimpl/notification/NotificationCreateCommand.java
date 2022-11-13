@@ -22,7 +22,7 @@ public class NotificationCreateCommand implements Command {
     private final CommandCacheService commandCacheService;
 
     @Override
-    public void executeWithExceptions(Update update) throws NoCoinOnExchangeException, NotificationConditionAlreadyDoneException, WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, AnyRuntimeException {
+    public void executeWithExceptions(Update update) throws NoCoinOnExchangeException, NotificationConditionAlreadyDoneException, WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, AnyRuntimeException, CurrencyEqualsCodeException {
         String text;
         Long chatId;
         Integer messageId;

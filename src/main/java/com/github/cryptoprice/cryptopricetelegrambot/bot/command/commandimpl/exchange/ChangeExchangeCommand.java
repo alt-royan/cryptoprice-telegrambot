@@ -1,4 +1,4 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.exchange;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
@@ -14,8 +14,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.ChangeExchangeCommand.TextMessages.CHOOSE_EXCHANGE;
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.ChangeExchangeCommand.TextMessages.DONE;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.exchange.ChangeExchangeCommand.TextMessages.CHOOSE_EXCHANGE;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.exchange.ChangeExchangeCommand.TextMessages.DONE;
 
 @Component
 @RequiredArgsConstructor

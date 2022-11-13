@@ -17,6 +17,7 @@ public enum CommandName {
     FAVOURITES_ADD("/favouritesAdd"),
     FAVOURITES_REMOVE("/favouritesRemove"),
     PRICE_FAVOURITES("/priceFavourites"),
+    COMPARE("/compare"),
     CHANGE_EXCHANGE("/changeExchange"),
     NONE("");
 
