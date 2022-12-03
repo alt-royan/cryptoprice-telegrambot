@@ -1,7 +1,13 @@
 package com.github.cryptoprice.cryptopricetelegrambot.model.enums;
 
 public enum Exchange {
-    BINANCE("Binance");
+    BINANCE("Binance"),
+    POLONIEX("Poloniex"),
+    BITSTAMP("Bitstamp"),
+    BITFINEX("Bitfinex"),
+    COINBASE("Coinbase"),
+    KRAKEN("Kraken"),
+    BITTREX("Bittrex");
 
     private final String name;
 

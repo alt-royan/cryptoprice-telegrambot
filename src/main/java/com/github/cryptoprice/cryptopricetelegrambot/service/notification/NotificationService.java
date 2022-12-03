@@ -23,6 +23,10 @@ public class NotificationService {
         return repository.findAllByChatId(chatId);
     }
 
+    public List<Notification> getAll() {
+        return repository.findAll();
+    }
+
     @Transactional
     public Notification createNotification(Notification notification) {
         return repository.save(notification);

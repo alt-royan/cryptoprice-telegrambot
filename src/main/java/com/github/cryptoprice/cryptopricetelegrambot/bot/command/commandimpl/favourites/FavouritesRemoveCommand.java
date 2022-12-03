@@ -23,7 +23,7 @@ public class FavouritesRemoveCommand implements Command {
 
     private final BotService botService;
 
-    private final String requestRegex = "/favouritesRemove [a-zA-Z]*";
+    private final String requestRegex = this.getCommandName().getCommandIdentifier() + " [a-zA-Z]*";
 
     @Override
     public void executeWithExceptions(Update update) throws WrongCommandFormatException {

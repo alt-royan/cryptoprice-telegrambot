@@ -24,7 +24,7 @@ public class NotificationDeleteCommand implements Command {
 
     private final BotService botService;
 
-    private final String requestRegex = "/notificationDelete \\d*";
+    private final String requestRegex = this.getCommandName().getCommandIdentifier() + " \\d*";
 
 
     @Override
@@ -51,7 +51,7 @@ public class NotificationDeleteCommand implements Command {
                 List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
                 notifications.forEach(n -> keyboard.add(List.of(InlineKeyboardButton.builder()
-                        .text(String.format("%s %s %f %s", n.getCoinCode(), n.getType().getSign(), n.getTriggeredPrice(), n.getCurrency().toString()))
+                        .text(String.format("%s %s %f %s", n.getCoinCode(), n.getType().getSign(), n.getTriggeredPrice(), n.getCurrency()))
                         .callbackData(String.format(DELETE_NOTIFICATION_CALLBACK, n.getId()))
                         .build())));
 

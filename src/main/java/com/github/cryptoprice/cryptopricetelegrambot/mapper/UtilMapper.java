@@ -1,43 +1,32 @@
 package com.github.cryptoprice.cryptopricetelegrambot.mapper;
 
-import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
+import org.knowm.xchange.currency.Currency;
+import org.knowm.xchange.currency.CurrencyPair;
+import org.knowm.xchange.instrument.Instrument;
 import org.mapstruct.Mapper;
 import org.mapstruct.Named;
+
+import java.util.Map;
+
 
 @Mapper(componentModel = "spring")
 public interface UtilMapper {
 
-    @Named("fromBinanceSymbolToCoinCode")
-    default String fromBinanceSymbolToCoinCode(String symbol) {
-        int currencyIndex;
-        for (Currency currency : Currency.values()) {
-            if (symbol.endsWith(currency.toString())) {
-                currencyIndex = symbol.lastIndexOf(currency.name());
-                try {
-                    Currency.valueOf(symbol.substring(currencyIndex).toUpperCase());
-                    return symbol.substring(0, currencyIndex).toUpperCase();
-                } catch (RuntimeException e) {
-                    return null;
-                }
-            }
-        }
-        return null;
+    Map<String, Currency> analogues = Map.of("UST", Currency.USDT);
+
+    @Named("fromInstrumentToCoinCode")
+    default Currency fromInstrumentToCoinCode(Instrument instrument) {
+        var currencyPair = (CurrencyPair) instrument;
+        return currencyPair.base;
+
     }
 
-    @Named("fromBinanceSymbolToCurrency")
-    default Currency fromBinanceSymbolToCurrency(String symbol) {
-        int currencyIndex;
-        for (Currency currency : Currency.values()) {
-            if (symbol.endsWith(currency.toString())) {
-                currencyIndex = symbol.lastIndexOf(currency.name());
-                try {
-                    return Currency.valueOf(symbol.substring(currencyIndex).toUpperCase());
-                } catch (RuntimeException e) {
-                    return null;
-                }
-            }
+    @Named("fromInstrumentToCurrency")
+    default Currency fromInstrumentToCurrency(Instrument instrument) {
+        var currencyPair = (CurrencyPair) instrument;
+        if (analogues.containsKey(currencyPair.counter.getCurrencyCode())) {
+            return analogues.get(currencyPair.counter.getCurrencyCode());
         }
-        return null;
+        return currencyPair.counter;
     }
-
 }

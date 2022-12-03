@@ -28,7 +28,6 @@ public class ChangeExchangeCommand implements Command {
         String text;
         Long chatId;
         Integer messageId;
-        boolean isCallback;
 
         if (update.hasCallbackQuery()) {
             text = update.getCallbackQuery().getData().trim();
@@ -74,9 +73,5 @@ public class ChangeExchangeCommand implements Command {
     static class TextMessages {
         public final static String DONE = "Биржа изменена на: %s";
         public final static String CHOOSE_EXCHANGE = "Текущая биржа: %s";
-
-        public final static String WRONG_EXCHANGE = "Такая биржа не поддерживается";
-
-        public final static String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
     }
 }

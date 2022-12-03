@@ -18,6 +18,7 @@
         <telegrambots.version>6.1.0</telegrambots.version>
         <mapstruct.version>1.5.3.Final</mapstruct.version>
         <lombok.version>1.18.24</lombok.version>
+        <xchange.version>5.0.14</xchange.version>
     </properties>
     <dependencies>
         <dependency>
@@ -65,10 +66,88 @@
         </dependency>
 
         <dependency>
-            <groupId>io.github.binance</groupId>
-            <artifactId>binance-connector-java</artifactId>
-            <version>1.10.0</version>
+            <groupId>org.knowm.xchange</groupId>
+            <artifactId>xchange-core</artifactId>
+            <version>${xchange.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.knowm.xchange</groupId>
+            <artifactId>xchange-poloniex</artifactId>
+            <version>${xchange.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.knowm.xchange</groupId>
+                    <artifactId>xchange-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.knowm.xchange</groupId>
+            <artifactId>xchange-binance</artifactId>
+            <version>${xchange.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.knowm.xchange</groupId>
+                    <artifactId>xchange-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.knowm.xchange</groupId>
+            <artifactId>xchange-bitstamp</artifactId>
+            <version>${xchange.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.knowm.xchange</groupId>
+                    <artifactId>xchange-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.knowm.xchange</groupId>
+            <artifactId>xchange-bitfinex</artifactId>
+            <version>${xchange.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.knowm.xchange</groupId>
+                    <artifactId>xchange-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.knowm.xchange</groupId>
+            <artifactId>xchange-coinbasepro</artifactId>
+            <version>${xchange.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.knowm.xchange</groupId>
+                    <artifactId>xchange-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.knowm.xchange</groupId>
+            <artifactId>xchange-kraken</artifactId>
+            <version>${xchange.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.knowm.xchange</groupId>
+                    <artifactId>xchange-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.knowm.xchange</groupId>
+            <artifactId>xchange-bittrex</artifactId>
+            <version>${xchange.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.knowm.xchange</groupId>
+                    <artifactId>xchange-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
     </dependencies>
 
     <build>

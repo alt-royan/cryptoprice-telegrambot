@@ -1,7 +1,7 @@
 package com.github.cryptoprice.cryptopricetelegrambot.exception;
 
 
-import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.CurrencyCounter;
 
 /**
  * Exception throws when try to use unsupported currency
@@ -26,7 +26,7 @@ public class NotSupportedCurrencyException extends CommonException {
     @Override
     public String getMessage() {
         var result = new StringBuilder(String.format(messageTemplate, currency));
-        for (Currency value : Currency.values()) {
+        for (CurrencyCounter value : CurrencyCounter.values()) {
             result.append(value).append(" ");
         }
         return result.toString();

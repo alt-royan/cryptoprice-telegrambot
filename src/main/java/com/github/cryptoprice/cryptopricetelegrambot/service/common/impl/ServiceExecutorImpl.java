@@ -1,19 +1,19 @@
 package com.github.cryptoprice.cryptopricetelegrambot.service.common.impl;
 
-import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPrice24hDto;
-import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPriceDto;
+import com.github.cryptoprice.cryptopricetelegrambot.dto.CoinPriceDto;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.*;
 import com.github.cryptoprice.cryptopricetelegrambot.model.Chat;
 import com.github.cryptoprice.cryptopricetelegrambot.model.Notification;
-import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.NotificationType;
 import com.github.cryptoprice.cryptopricetelegrambot.service.chat.ChatService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.ExchangeService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.ServiceExecutor;
+import com.github.cryptoprice.cryptopricetelegrambot.service.exchange.BinanceService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.notification.NotificationParser;
 import com.github.cryptoprice.cryptopricetelegrambot.service.notification.NotificationService;
+import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,6 +27,8 @@ import java.util.Map;
 @Slf4j
 public class ServiceExecutorImpl implements BotService, ServiceExecutor {
 
+    private final String NOTIFICATION_MESSAGE = "Внимание! %s стал %s чем %f %s";
+
     private final HashMap<Exchange, ExchangeService> exchangeMap;
 
     private final ChatService chatService;
@@ -37,6 +39,11 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
         var chat = chatService.getByChatId(chatId);
         return exchangeMap.get(chat.getExchange());
     }
+
+    private ExchangeService getExchangeService(Exchange exchange) {
+        return exchangeMap.get(exchange);
+    }
+
 
     private Chat checkChatIsRegistered(Long chatId) {
         Chat chat;
@@ -60,42 +67,26 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
         chatService.registerChat(chatId);
     }
 
-    @Override
-    public CoinPrice24hDto getCoinPrice24h(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException, CurrencyEqualsCodeException {
-        checkChatIsRegistered(chatId);
-        var exchangeService = getExchangeService(chatId);
-        try {
-            return exchangeService.getCoinPriceFor24h(coinCode, currency);
-        } catch (ClientException e) {
-            throw new NoCoinOnExchangeException(coinCode.toUpperCase(), exchangeService.getExchange());
-        }
-    }
 
     @Override
-    public CoinPriceDto getCoinPrice(Long chatId, String coinCode, Currency currency) throws ExchangeServerException, NoCoinOnExchangeException, CurrencyEqualsCodeException {
+    public CoinPriceDto getCoinPrice(Long chatId, String coinCode, String currency) throws ExchangeServerException, NoCoinPairOnExchangeException, CurrencyEqualsCodeException {
         checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
-        try {
-            return exchangeService.getCoinPrice(coinCode, currency);
-        } catch (ClientException e) {
-            throw new NoCoinOnExchangeException(coinCode.toUpperCase(), exchangeService.getExchange());
-        }
+        return exchangeService.getCoinPrice(coinCode, currency);
     }
 
     /**
-     * Return the map type <{@link Exchange}, {@link Object}> where key is exchange and value can be {@link CoinPrice24hDto} or instance of {@link RuntimeException}
+     * Return the map type <{@link Exchange}, {@link Object}> where key is exchange and value can be {@link CoinPriceDto} or instance of {@link RuntimeException}
      */
     @Override
-    public Map<Exchange, Object> getPriceAllExchanges(Long chatId, String coinCode, Currency currency) throws CurrencyEqualsCodeException {
+    public Map<Exchange, Object> getPriceAllExchanges(Long chatId, String coinCode, String currency) throws CurrencyEqualsCodeException {
         checkChatIsRegistered(chatId);
         Map<Exchange, Object> coinPriceMap = new HashMap<>();
         for (ExchangeService service : exchangeMap.values()) {
             try {
-                var coinPriceDto = service.getCoinPriceFor24h(coinCode, currency);
+                var coinPriceDto = service.getCoinPrice(coinCode, currency);
                 coinPriceMap.put(service.getExchange(), coinPriceDto);
-            } catch (ClientException e) {
-                coinPriceMap.put(service.getExchange(), new NoCoinOnExchangeException(coinCode, service.getExchange()));
-            } catch (ExchangeServerException e) {
+            } catch (NoCoinPairOnExchangeException | ExchangeServerException e) {
                 coinPriceMap.put(service.getExchange(), e);
             }
         }
@@ -104,10 +95,10 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     }
 
     /**
-     * Return the map type <{@link String}, {@link Object}> where key is coinCode and value can be {@link CoinPrice24hDto} or {@link RuntimeException}
+     * Return the map type <{@link String}, {@link Object}> where key is coinCode and value can be {@link CoinPriceDto} or {@link RuntimeException}
      */
     @Override
-    public Map<String, Object> getFavouriteCoinsPrice(Long chatId, Currency currency) throws CurrencyEqualsCodeException {
+    public Map<String, Object> getFavouriteCoinsPrice(Long chatId, String currency) throws CurrencyEqualsCodeException {
         var chat = checkChatIsRegistered(chatId);
         Map<String, Object> coinPriceMap = new HashMap<>();
         var favouriteCoins = chat.getFavoriteCoins();
@@ -115,11 +106,9 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
 
         for (String coinCode : favouriteCoins) {
             try {
-                var coinPrice = exchangeService.getCoinPriceFor24h(coinCode, currency);
+                var coinPrice = exchangeService.getCoinPrice(coinCode, currency);
                 coinPriceMap.put(coinCode, coinPrice);
-            } catch (ClientException e) {
-                coinPriceMap.put(coinCode, new NoCoinOnExchangeException(coinCode, exchangeService.getExchange()));
-            } catch (ExchangeServerException e) {
+            } catch (ExchangeServerException | NoCoinPairOnExchangeException e) {
                 coinPriceMap.put(coinCode, e);
             }
         }
@@ -141,15 +130,11 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     }
 
     @Override
-    public void addFavouriteCoins(Long chatId, List<String> coinCodes) throws ExchangeServerException, NoCoinOnExchangeException, CurrencyEqualsCodeException {
+    public void addFavouriteCoins(Long chatId, List<String> coinCodes) throws ExchangeServerException, NoCoinPairOnExchangeException, CurrencyEqualsCodeException {
         checkChatIsRegistered(chatId);
         var exchangeService = getExchangeService(chatId);
         for (String coinCode : coinCodes) {
-            try {
-                exchangeService.getCoinPrice(coinCode, Currency.USDT);
-            } catch (ClientException e) {
-                throw new NoCoinOnExchangeException(coinCode.toUpperCase(), exchangeService.getExchange());
-            }
+            exchangeService.getCoinPrice(coinCode, "USDT");
         }
         chatService.addFavouriteCoins(chatId, coinCodes);
     }
@@ -168,19 +153,14 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     }
 
     @Override
-    public Notification createNotification(Long chatId, String request) throws WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, NoCoinOnExchangeException, NotificationConditionAlreadyDoneException, CurrencyEqualsCodeException {
+    public Notification createNotification(Long chatId, String request) throws WrongNotificationFormatException, ExchangeServerException, NoCoinPairOnExchangeException, NotificationConditionAlreadyDoneException, CurrencyEqualsCodeException {
         checkChatIsRegistered(chatId);
-        var exchangeService = getExchangeService(chatId);
+        var exchangeService = getExchangeService(Exchange.BINANCE);
         var notification = NotificationParser.parseNotificationCreateRequest(request);
         notification.setChatId(chatId);
-        CoinPriceDto coinPrice;
-        try {
-            coinPrice = exchangeService.getCoinPrice(notification.getCoinCode(), notification.getCurrency());
-        } catch (ClientException e) {
-            throw new NoCoinOnExchangeException(notification.getCoinCode().toUpperCase(), exchangeService.getExchange());
-        }
-        if (NotificationType.LESS_THAN.equals(notification.getType()) && coinPrice.getPrice() < notification.getTriggeredPrice() ||
-                NotificationType.MORE_THAN.equals(notification.getType()) && coinPrice.getPrice() > notification.getTriggeredPrice()) {
+        var coinPrice = exchangeService.getCoinPrice(notification.getCoinCode().toUpperCase(), notification.getCurrency());
+        if (NotificationType.LESS_THAN.equals(notification.getType()) && coinPrice.getLast().compareTo(notification.getTriggeredPrice()) < 0 ||
+                NotificationType.MORE_THAN.equals(notification.getType()) && coinPrice.getLast().compareTo(notification.getTriggeredPrice()) > 0) {
             throw new NotificationConditionAlreadyDoneException(notification);
         }
         return notificationService.createNotification(notification);
@@ -208,5 +188,38 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     public void deleteChat(Long chatId) {
         chatService.deleteChat(chatId);
         notificationService.deleteAllNotification(chatId);
+    }
+
+    @Override
+    public void checkNotifications() {
+        var service = (BinanceService) getExchangeService(Exchange.BINANCE);
+        List<CoinPriceDto> prices;
+        try {
+            prices = service.getAllCoinPrice();
+        } catch (NoCoinPairOnExchangeException | ExchangeServerException e) {
+            throw new RuntimeException(e);
+        }
+
+        var notifications = notificationService.getAll();
+        for (Notification n : notifications) {
+            var price = prices.stream()
+                    .filter(p -> n.getCurrency().equals(p.getCurrency().getCurrencyCode())
+                            && n.getCoinCode().equals(p.getCoinCode().getCurrencyCode()))
+                    .findFirst().orElseThrow(() -> new RuntimeException("No such currency pair on Binance: " + n.getCoinCode() + "_" + n.getCurrency()));
+            switch (n.getType()) {
+                case LESS_THAN:
+                    if (price.getLast().compareTo(n.getTriggeredPrice()) < 0) {
+                        MessageSender.sendMessage(n.getChatId(), String.format(NOTIFICATION_MESSAGE, n.getCoinCode(), n.getType().toString(), n.getTriggeredPrice(), n.getCurrency()));
+                        notificationService.deleteNotification(n.getId());
+                    }
+                    break;
+                case MORE_THAN:
+                    if (price.getLast().compareTo(n.getTriggeredPrice()) > 0) {
+                        MessageSender.sendMessage(n.getChatId(), String.format(NOTIFICATION_MESSAGE, n.getCoinCode(), n.getType().toString(), n.getTriggeredPrice(), n.getCurrency()));
+                        notificationService.deleteNotification(n.getId());
+                    }
+                    break;
+            }
+        }
     }
 }

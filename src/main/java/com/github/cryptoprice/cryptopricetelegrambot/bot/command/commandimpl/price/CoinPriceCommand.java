@@ -2,9 +2,8 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.pr
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.CurrencyEqualsCodeException;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.NotSupportedCurrencyException;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.WrongCommandFormatException;
+import com.github.cryptoprice.cryptopricetelegrambot.dto.CoinPriceDto;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.*;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.CurrencyCounter;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.CommandCacheService;
@@ -19,12 +18,12 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.price.CompareCommand.TextMessages.*;
+import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.price.CoinPriceCommand.TextMessages.*;
 
 
 @Component
 @RequiredArgsConstructor
-public class CompareCommand implements Command {
+public class CoinPriceCommand implements Command {
 
     public final BotService botService;
     private final CommandCacheService commandCacheService;
@@ -33,12 +32,11 @@ public class CompareCommand implements Command {
     private static final int BUTTONS_IN_LINE = 4;
 
     @Override
-    public void executeWithExceptions(Update update) throws WrongCommandFormatException, NotSupportedCurrencyException, CurrencyEqualsCodeException {
+    public void executeWithExceptions(Update update) throws WrongCommandFormatException, NoCoinPairOnExchangeException, NotSupportedCurrencyException, ExchangeServerException, CurrencyEqualsCodeException {
         String text;
         Long chatId;
         Integer messageId;
         boolean isCallback;
-
 
         if (update.hasCallbackQuery()) {
             text = update.getCallbackQuery().getData().trim();
@@ -79,15 +77,12 @@ public class CompareCommand implements Command {
             }
             var waitMessage = MessageSender.editOrSend(chatId, messageId, WATCH_PRICE_WAIT);
 
-            var symbol = text.split(" ")[1].split("_");
-            var coinCode = symbol[0];
-            var currency = symbol[1].toUpperCase();
-            var coinPriceMap = botService.getPriceAllExchanges(chatId, coinCode, currency);
+            var coinPrice24h = getCoinPriceFromRequest(text, chatId, messageId);
 
             if (isCallback) {
-                MessageSender.editMessage(chatId, messageId, coinPriceMap.toString());
+                MessageSender.editMessage(chatId, messageId, coinPrice24h.toString());
             } else {
-                MessageSender.editMessage(chatId, waitMessage.getMessageId(), coinPriceMap.toString());
+                MessageSender.editMessage(chatId, waitMessage.getMessageId(), coinPrice24h.toString());
             }
             commandCacheService.clearCache(chatId);
         } else if (isCallback && text.contentEquals(ANOTHER_COIN_CALLBACK)) {
@@ -96,6 +91,17 @@ public class CompareCommand implements Command {
             var keyboard = createKeyboardForCurrencies(text);
             MessageSender.editOrSend(chatId, messageId, CHOOSE_CURRENCY, keyboard);
             commandCacheService.clearCache(chatId);
+        }
+    }
+
+    private CoinPriceDto getCoinPriceFromRequest(String text, long chatId, Integer messageId) throws ExchangeServerException, NoCoinPairOnExchangeException, CurrencyEqualsCodeException {
+        var symbol = text.split(" ")[1].split("_");
+        var coinCode = symbol[0];
+        var currency = symbol[1].toUpperCase();
+        try {
+            return botService.getCoinPrice(chatId, coinCode, currency);
+        } catch (NoCoinPairOnExchangeException e) {
+            throw new NoCoinPairOnExchangeException(e.getCurrencyPair(), e.getExchange(), messageId);
         }
     }
 
@@ -126,9 +132,10 @@ public class CompareCommand implements Command {
 
     @Override
     public CommandName getCommandName() {
-        return CommandName.COMPARE;
+        return CommandName.COIN_PRICE;
     }
 
+    //todo
     static class TextMessages {
         public static final String CHOOSE_CRYPTO = "Выберите криптовалюту";
         public static final String CHOOSE_CURRENCY = "Выберите валюту";

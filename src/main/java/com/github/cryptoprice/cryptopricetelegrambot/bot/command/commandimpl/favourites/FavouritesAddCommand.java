@@ -4,7 +4,7 @@ import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.CurrencyEqualsCodeException;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.ExchangeServerException;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.NoCoinOnExchangeException;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.NoCoinPairOnExchangeException;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.CommandCacheService;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
@@ -26,7 +26,7 @@ public class FavouritesAddCommand implements Command {
     private final CommandCacheService commandCacheService;
 
     @Override
-    public void executeWithExceptions(Update update) throws NoCoinOnExchangeException, ExchangeServerException, CurrencyEqualsCodeException {
+    public void executeWithExceptions(Update update) throws NoCoinPairOnExchangeException, ExchangeServerException, CurrencyEqualsCodeException {
         String text;
         Long chatId;
         Integer messageId;

@@ -1,34 +1,53 @@
 package com.github.cryptoprice.cryptopricetelegrambot.service.common;
 
-import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPrice24hDto;
-import com.github.cryptoprice.cryptopricetelegrambot.dto.common.CoinPriceDto;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.ClientException;
+import com.github.cryptoprice.cryptopricetelegrambot.dto.CoinPriceDto;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.CurrencyEqualsCodeException;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.ExchangeServerException;
-import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.NoCoinPairOnExchangeException;
+import com.github.cryptoprice.cryptopricetelegrambot.mapper.CoinPriceMapper;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.impl.ServiceExecutorImpl;
+import lombok.RequiredArgsConstructor;
+import org.knowm.xchange.currency.CurrencyPair;
+import org.knowm.xchange.exceptions.CurrencyPairNotValidException;
+import org.knowm.xchange.exceptions.ExchangeException;
+import org.knowm.xchange.service.marketdata.MarketDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
+import java.io.IOException;
 
-public interface ExchangeService {
-    default CoinPriceDto getCoinPrice(String coinCode, Currency currency) throws ClientException, ExchangeServerException, CurrencyEqualsCodeException {
-        return this.getCoinPrice(List.of(coinCode), currency).get(0);
+@RequiredArgsConstructor
+public abstract class ExchangeService {
+
+    protected final MarketDataService market;
+
+    protected final CoinPriceMapper coinPriceMapper;
+
+
+    public CoinPriceDto getCoinPrice(String coinCode, String currency) throws ExchangeServerException, CurrencyEqualsCodeException, NoCoinPairOnExchangeException {
+        if (coinCode.equalsIgnoreCase(currency)) {
+            throw new CurrencyEqualsCodeException(coinCode.toUpperCase());
+        }
+        try {
+            var result = market.getTicker(convertToCurrencyPair(coinCode, currency));
+            return coinPriceMapper.toCoinPrice(result);
+        } catch (CurrencyPairNotValidException e) {
+            e.printStackTrace();
+            throw new NoCoinPairOnExchangeException(coinCode, currency, getExchange());
+        } catch (ExchangeException | IOException e) {
+            e.printStackTrace();
+            throw new ExchangeServerException();
+        }
     }
 
-    default CoinPrice24hDto getCoinPriceFor24h(String coinCode, Currency currency) throws ClientException, ExchangeServerException, CurrencyEqualsCodeException {
-        return this.getCoinPriceFor24h(List.of(coinCode), currency).get(0);
-    }
-
-    List<CoinPriceDto> getCoinPrice(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException, CurrencyEqualsCodeException;
-
-    List<CoinPrice24hDto> getCoinPriceFor24h(List<String> coinCodes, Currency currency) throws ClientException, ExchangeServerException, CurrencyEqualsCodeException;
-
-    Exchange getExchange();
+    public abstract Exchange getExchange();
 
     @Autowired
-    default void registerService(ServiceExecutorImpl serviceExecutor) {
+    public void registerService(ServiceExecutorImpl serviceExecutor) {
         serviceExecutor.registerService(this);
+    }
+
+    private CurrencyPair convertToCurrencyPair(String coinCode, String currency) {
+        return new CurrencyPair(coinCode, currency);
     }
 }

@@ -56,10 +56,10 @@ public class NotificationsCommand implements Command {
                     for (int i = 0; i < notifications.size(); i++) {
                         var n = notifications.get(i);
                         response.append(i + 1).append(". ")
-                                .append(n.getCoinCode().toUpperCase()).append(" ")
+                                .append(n.getCoinCode()).append(" ")
                                 .append(n.getType().getSign()).append(" ")
                                 .append(n.getTriggeredPrice()).append(" ")
-                                .append(n.getCurrency().toString().toUpperCase()).append("\n");
+                                .append(n.getCurrency().toUpperCase()).append("\n");
 
                     }
                     List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();

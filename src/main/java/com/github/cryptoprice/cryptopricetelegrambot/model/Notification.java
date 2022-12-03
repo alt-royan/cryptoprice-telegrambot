@@ -1,11 +1,11 @@
 package com.github.cryptoprice.cryptopricetelegrambot.model;
 
-import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Currency;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.NotificationType;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -18,13 +18,12 @@ public class Notification {
 
     private String coinCode;
 
-    @Enumerated(EnumType.STRING)
-    private Currency currency;
+    private String currency;
 
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
-    private Double triggeredPrice;
+    private BigDecimal triggeredPrice;
 
     private Long chatId;
 
@@ -33,6 +32,6 @@ public class Notification {
 
     @Override
     public String toString() {
-        return String.format("%s %s %f %s", coinCode.toUpperCase(), type.getSign(), triggeredPrice, currency.toString());
+        return String.format("%s %s %f %s", coinCode.toUpperCase(), type.getSign(), triggeredPrice, currency);
     }
 }

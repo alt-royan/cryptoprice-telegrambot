@@ -8,6 +8,7 @@ public enum CommandName {
     START("/start"),
     STOP("/stop"),
     PRICE("/price"),
+    COIN_PRICE("/coinPrice"),
     HELP("/help"),
     CANCEL("/cancel"),
     NOTIFICATIONS("/notifications"),
@@ -19,6 +20,7 @@ public enum CommandName {
     PRICE_FAVOURITES("/priceFavourites"),
     COMPARE("/compare"),
     CHANGE_EXCHANGE("/changeExchange"),
+    GET_MENU("/getMenu"),
     NONE("");
 
 
