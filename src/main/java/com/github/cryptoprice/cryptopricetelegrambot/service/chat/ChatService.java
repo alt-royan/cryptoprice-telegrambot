@@ -4,6 +4,7 @@ import com.github.cryptoprice.cryptopricetelegrambot.exception.NotFoundException
 import com.github.cryptoprice.cryptopricetelegrambot.model.Chat;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.ChatStatus;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import com.github.cryptoprice.cryptopricetelegrambot.repository.ChatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import java.util.List;
 public class ChatService {
 
     private static final Exchange DEFAULT_EXCHANGE = Exchange.BINANCE;
+    private static final Language DEFAULT_LANG = Language.EN;
     private static final List<String> DEFAULT_FAVOURITE_COINS = List.of("BTC", "ETH", "BNB", "SOL");
 
     private final ChatRepository repository;
@@ -31,6 +33,7 @@ public class ChatService {
             chat = new Chat();
             chat.setChatId(chatId);
             chat.setExchange(DEFAULT_EXCHANGE);
+            chat.setLanguage(DEFAULT_LANG);
             chat.setStatus(ChatStatus.ACTIVE);
             chat.setFavoriteCoins(DEFAULT_FAVOURITE_COINS);
         }
@@ -53,6 +56,13 @@ public class ChatService {
     public void changeExchange(Long chatId, Exchange newExchange) {
         var chat = getByChatId(chatId);
         chat.setExchange(newExchange);
+        repository.save(chat);
+    }
+
+    @Transactional
+    public void changeLanguage(Long chatId, Language language) {
+        var chat = getByChatId(chatId);
+        chat.setLanguage(language);
         repository.save(chat);
     }
 

@@ -1,5 +1,7 @@
 package com.github.cryptoprice.cryptopricetelegrambot.exception;
 
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
+import com.github.cryptoprice.cryptopricetelegrambot.utils.BotMessages;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 
 /**
@@ -30,11 +32,11 @@ public abstract class CommonException extends Exception {
     @Override
     public abstract String getMessage();
 
-    public void handleMessage(long chatId) {
+    public void handleMessage(long chatId, Language language) {
         if (hasEditableMessage()) {
-            MessageSender.editMessage(chatId, this.getEditableMessageId(), this.getMessage());
+            MessageSender.editMessage(chatId, this.getEditableMessageId(), BotMessages.getBotMessage(language, this.getMessage()));
         } else {
-            MessageSender.sendMessage(chatId, this.getMessage());
+            MessageSender.sendMessage(chatId, BotMessages.getBotMessage(language, this.getMessage()));
         }
     }
 }

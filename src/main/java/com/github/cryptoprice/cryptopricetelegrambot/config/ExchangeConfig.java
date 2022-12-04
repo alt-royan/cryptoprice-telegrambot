@@ -26,12 +26,6 @@ public class ExchangeConfig {
         return poloniex.getMarketDataService();
     }
 
-   /* @Bean
-    public MarketDataService bitstampMarket() {
-        var bitstamp = ExchangeFactory.INSTANCE.createExchange(BitstampExchange.class);
-        return bitstamp.getMarketDataService();
-    }*/
-
     @Bean
     public MarketDataService bitfinexMarket() {
         var bitfinex = ExchangeFactory.INSTANCE.createExchange(BitfinexExchange.class);

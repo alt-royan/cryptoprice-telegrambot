@@ -1,10 +1,8 @@
-package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.exchange;
+package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.CommonException;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.WrongCommandFormatException;
-import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.BotMessages;
@@ -19,11 +17,12 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class ChangeExchangeCommand implements Command {
+public class LanguageCommand implements Command {
 
-    public final static String EXCHANGE_IS_CHANGED = "exchange.isChanged";
-    public final static String CURRENT_EXCHANGE = "exchange.current";
-
+    public final static String MAIN = "language.main";
+    public final static String LANGUAGE_KEY = "language";
+    public final static String SUCCESS = "language.success";
+    public final static String LANGUAGE_CALLBACK = "/language %s";
 
     private final BotService botService;
 
@@ -51,33 +50,27 @@ public class ChangeExchangeCommand implements Command {
         }
 
         var language = getLanguage(chatId);
-
         if (text.contentEquals(getCommandName().getCommandIdentifier())) {
-            var exchange = botService.getExchange(chatId);
-            List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-            for (Exchange ex : Exchange.values()) {
-                keyboard.add(List.of(InlineKeyboardButton.builder()
-                        .text(ex.getName())
-                        .callbackData(getCommandName().getCommandIdentifier() + " " + ex)
-                        .build()));
+            List<InlineKeyboardButton> buttonList = new ArrayList<>();
+            for (Language value : Language.values()) {
+                buttonList.add(InlineKeyboardButton.builder()
+                        .text(BotMessages.getBotMessage(value, LANGUAGE_KEY))
+                        .callbackData(String.format(LANGUAGE_CALLBACK, value.getName()))
+                        .build());
             }
-            MessageSender.editOrSend(chatId, messageId, String.format(BotMessages.getBotMessage(language, CURRENT_EXCHANGE), exchange.getName()), keyboard);
+
+            MessageSender.sendMessage(chatId, BotMessages.getBotMessage(language, MAIN), List.of(buttonList));
         } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
-            var exchangeName = text.substring(getCommandName().getCommandIdentifier().length()).trim();
-            Exchange exchange;
-            try {
-                exchange = Exchange.getEnum(exchangeName);
-            } catch (IllegalArgumentException e) {
-                throw new WrongCommandFormatException(getCommandName(), messageId);
-            }
-            botService.setExchange(chatId, exchange);
-            MessageSender.editOrSend(chatId, messageId, String.format(BotMessages.getBotMessage(language, EXCHANGE_IS_CHANGED), exchange.getName()));
+            var languageName = text.substring(getCommandName().getCommandIdentifier().length()).trim();
+            botService.changeLanguage(Language.getEnumByName(languageName), chatId);
+            language = getLanguage(chatId);
+            MessageSender.editOrSend(chatId, messageId, String.format(BotMessages.getBotMessage(language, SUCCESS), language.getName()));
         }
     }
 
 
     @Override
     public CommandName getCommandName() {
-        return CommandName.CHANGE_EXCHANGE;
+        return CommandName.LANGUAGE;
     }
 }

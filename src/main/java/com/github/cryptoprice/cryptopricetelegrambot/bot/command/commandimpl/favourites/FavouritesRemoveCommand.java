@@ -2,8 +2,11 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.fa
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.CommonException;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.WrongCommandFormatException;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
+import com.github.cryptoprice.cryptopricetelegrambot.utils.BotMessages;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -14,19 +17,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.favourites.FavouritesRemoveCommand.TextMessages.*;
-
 
 @Component
 @RequiredArgsConstructor
 public class FavouritesRemoveCommand implements Command {
+
+    public final static String DELETE_MAIN = "favourites.remove.main";
+    public final static String SUCCESS = "favourites.remove.success";
+    public final static String DELETE_FAVOURITE_CALLBACK = CommandName.FAVOURITES_REMOVE.getCommandIdentifier() + " %s";
 
     private final BotService botService;
 
     private final String requestRegex = this.getCommandName().getCommandIdentifier() + " [a-zA-Z]*";
 
     @Override
-    public void executeWithExceptions(Update update) throws WrongCommandFormatException {
+    public Language getLanguage(long chatId) {
+        return botService.getLanguage(chatId);
+    }
+
+    @Override
+    public void executeWithExceptions(Update update) throws CommonException {
         String text;
         Long chatId;
         Integer messageId;
@@ -43,22 +53,33 @@ public class FavouritesRemoveCommand implements Command {
             return;
         }
 
+        var language = getLanguage(chatId);
         if (text.contentEquals(getCommandName().getCommandIdentifier())) {
             var favourites = botService.getFavouriteCoins(chatId);
             List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-            favourites.forEach(f -> keyboard.add(List.of(InlineKeyboardButton.builder()
-                    .text(f.toUpperCase())
-                    .callbackData(String.format(DELETE_FAVOURITE_CALLBACK, f))
-                    .build())));
+            for (int i = 0; i < favourites.size(); i += 2) {
+                List<InlineKeyboardButton> temp = new ArrayList<>();
+                temp.add(InlineKeyboardButton.builder()
+                        .text(favourites.get(i).toUpperCase())
+                        .callbackData(String.format(DELETE_FAVOURITE_CALLBACK, favourites.get(i)))
+                        .build());
+                if (i + 1 < favourites.size()) {
+                    temp.add(InlineKeyboardButton.builder()
+                            .text(favourites.get(i + 1).toUpperCase())
+                            .callbackData(String.format(DELETE_FAVOURITE_CALLBACK, favourites.get(i + 1)))
+                            .build());
+                }
+                keyboard.add(temp);
+            }
 
-            MessageSender.editOrSend(chatId, messageId, DELETE_INIT_MESSAGE, keyboard);
+            MessageSender.editOrSend(chatId, messageId, BotMessages.getBotMessage(language, DELETE_MAIN), keyboard);
         } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
             if (!Pattern.matches(requestRegex, text)) {
                 throw new WrongCommandFormatException(getCommandName(), messageId);
             }
             var coinCode = text.substring(getCommandName().getCommandIdentifier().length()).trim();
             botService.removeFavouriteCoin(chatId, coinCode);
-            MessageSender.editOrSend(chatId, messageId, String.format(FAVOURITE_DELETED, coinCode.toUpperCase()));
+            MessageSender.editOrSend(chatId, messageId, String.format(BotMessages.getBotMessage(language, SUCCESS), coinCode.toUpperCase()));
         }
     }
 
@@ -66,11 +87,5 @@ public class FavouritesRemoveCommand implements Command {
     @Override
     public CommandName getCommandName() {
         return CommandName.FAVOURITES_REMOVE;
-    }
-
-    static class TextMessages {
-        public final static String DELETE_INIT_MESSAGE = "Выберите что убрать из избранного: ";
-        public final static String FAVOURITE_DELETED = "%s убрано из избранных";
-        public final static String DELETE_FAVOURITE_CALLBACK = "/favouritesRemove %s";
     }
 }

@@ -13,7 +13,7 @@ import java.util.HashMap;
 public class CommandContainer {
 
     private final HashMap<String, Command> commandMap;
-    private final Command unknownCommand = new UnknownCommand();
+    private final UnknownCommand unknownCommand;
 
 
     public Command retrieveCommand(String commandIdentifier) {

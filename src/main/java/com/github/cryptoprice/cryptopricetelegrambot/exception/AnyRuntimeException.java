@@ -5,6 +5,5 @@ import lombok.Getter;
 public class AnyRuntimeException extends CommonException {
 
     @Getter
-    private final String message = "Ошибка. Попробуйте ещё раз";
-
+    private final String message = "error.tryAgain";
 }

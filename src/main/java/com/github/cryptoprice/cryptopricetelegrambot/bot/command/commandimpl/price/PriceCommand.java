@@ -2,8 +2,10 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.pr
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.*;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.CommonException;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
+import com.github.cryptoprice.cryptopricetelegrambot.utils.BotMessages;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -13,17 +15,27 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.price.PriceCommand.TextMessages.*;
-
 
 @Component
 @RequiredArgsConstructor
 public class PriceCommand implements Command {
 
+    public final static String COIN_PRICE = "price.coinPrice";
+    public final static String PRICE_FAVOURITES = "price.favouritesPrice";
+    public final static String COMPARE = "price.compare";
+    public final static String MAIN = "price.main";
+
+
     public final BotService botService;
 
     @Override
-    public void executeWithExceptions(Update update) throws WrongCommandFormatException, NoCoinPairOnExchangeException, NotSupportedCurrencyException, ExchangeServerException, CurrencyEqualsCodeException {
+    public Language getLanguage(long chatId) {
+        return botService.getLanguage(chatId);
+    }
+
+
+    @Override
+    public void executeWithExceptions(Update update) throws CommonException {
         String text;
         Long chatId;
         Integer messageId;
@@ -40,23 +52,24 @@ public class PriceCommand implements Command {
             return;
         }
 
+        var language = getLanguage(chatId);
         if (text.contentEquals(getCommandName().getCommandIdentifier())) {
             List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
             var coinPriceButton = InlineKeyboardButton.builder()
-                    .text(COIN_PRICE).callbackData(CommandName.COIN_PRICE.getCommandIdentifier())
+                    .text(BotMessages.getBotMessage(language, COIN_PRICE)).callbackData(CommandName.COIN_PRICE.getCommandIdentifier())
                     .build();
             var priceFavouritesButton = InlineKeyboardButton.builder()
-                    .text(PRICE_FAVOURITES).callbackData(CommandName.PRICE_FAVOURITES.getCommandIdentifier())
+                    .text(BotMessages.getBotMessage(language, PRICE_FAVOURITES)).callbackData(CommandName.PRICE_FAVOURITES.getCommandIdentifier())
                     .build();
             var compareButton = InlineKeyboardButton.builder()
-                    .text(COMPARE).callbackData(CommandName.COMPARE.getCommandIdentifier())
+                    .text(BotMessages.getBotMessage(language, COMPARE)).callbackData(CommandName.COMPARE.getCommandIdentifier())
                     .build();
 
             keyboard.add(List.of(coinPriceButton));
             keyboard.add(List.of(priceFavouritesButton));
             keyboard.add(List.of(compareButton));
 
-            MessageSender.editOrSend(chatId, messageId, "Курс", keyboard);
+            MessageSender.editOrSend(chatId, messageId, BotMessages.getBotMessage(language, MAIN), keyboard);
         }
     }
 
@@ -64,11 +77,5 @@ public class PriceCommand implements Command {
     @Override
     public CommandName getCommandName() {
         return CommandName.PRICE;
-    }
-
-    static class TextMessages {
-        public final static String COIN_PRICE = "Курс криптовалюты";
-        public final static String PRICE_FAVOURITES = "Курс избранных";
-        public final static String COMPARE = "Сравнить на разных биржах";
     }
 }

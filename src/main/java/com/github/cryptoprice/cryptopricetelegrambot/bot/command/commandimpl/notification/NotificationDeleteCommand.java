@@ -3,8 +3,11 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.no
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.AnyRuntimeException;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.CommonException;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.WrongCommandFormatException;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
+import com.github.cryptoprice.cryptopricetelegrambot.utils.BotMessages;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -15,20 +18,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.notification.NotificationDeleteCommand.TextMessages.*;
-
 
 @Component
 @RequiredArgsConstructor
 public class NotificationDeleteCommand implements Command {
 
+    public final static String DELETE_MAIN = "notification.delete.main";
+    public final static String SUCCESS = "notification.delete.success";
+    public final static String DELETE_NOTIFICATION_CALLBACK = CommandName.NOTIFICATION_DELETE.getCommandIdentifier() + " %d";
     private final BotService botService;
 
     private final String requestRegex = this.getCommandName().getCommandIdentifier() + " \\d*";
 
 
     @Override
-    public void executeWithExceptions(Update update) throws WrongCommandFormatException, AnyRuntimeException {
+    public Language getLanguage(long chatId) {
+        return botService.getLanguage(chatId);
+    }
+
+    @Override
+    public void executeWithExceptions(Update update) throws CommonException {
         String text;
         Long chatId;
         Integer messageId;
@@ -45,6 +54,7 @@ public class NotificationDeleteCommand implements Command {
             return;
         }
 
+        var language = getLanguage(chatId);
         try {
             if (text.contentEquals(getCommandName().getCommandIdentifier())) {
                 var notifications = botService.getActiveNotifications(chatId);
@@ -55,14 +65,14 @@ public class NotificationDeleteCommand implements Command {
                         .callbackData(String.format(DELETE_NOTIFICATION_CALLBACK, n.getId()))
                         .build())));
 
-                MessageSender.editOrSend(chatId, messageId, DELETE_INIT_MESSAGE, keyboard);
+                MessageSender.editOrSend(chatId, messageId, BotMessages.getBotMessage(language, DELETE_MAIN), keyboard);
             } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
                 if (!Pattern.matches(requestRegex, text)) {
                     throw new WrongCommandFormatException(getCommandName(), messageId);
                 }
                 var notificationId = Long.parseLong(text.split(" ")[1]);
                 botService.removeNotification(chatId, notificationId);
-                MessageSender.editOrSend(chatId, messageId, NOTIFICATION_DELETED);
+                MessageSender.editOrSend(chatId, messageId, BotMessages.getBotMessage(language, SUCCESS));
             }
         } catch (RuntimeException e) {
             throw new AnyRuntimeException();
@@ -73,11 +83,5 @@ public class NotificationDeleteCommand implements Command {
     @Override
     public CommandName getCommandName() {
         return CommandName.NOTIFICATION_DELETE;
-    }
-
-    static class TextMessages {
-        public final static String DELETE_INIT_MESSAGE = "Выберите уведомление для удаления: ";
-        public final static String NOTIFICATION_DELETED = "Уведомление удалено";
-        public final static String DELETE_NOTIFICATION_CALLBACK = "/notificationDelete %d";
     }
 }

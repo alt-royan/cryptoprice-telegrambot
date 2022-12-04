@@ -2,27 +2,35 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.no
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
-import com.github.cryptoprice.cryptopricetelegrambot.exception.*;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.AnyRuntimeException;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.CommonException;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.CommandCacheService;
+import com.github.cryptoprice.cryptopricetelegrambot.utils.BotMessages;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.notification.NotificationCreateCommand.TextMessages.CREATE_NOTIFICATION_MESSAGE;
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.notification.NotificationCreateCommand.TextMessages.NOTIFICATION_CREATED;
 
 
 @Component
 @RequiredArgsConstructor
 public class NotificationCreateCommand implements Command {
 
+    public static final String CREATE_NOTIFICATION_MESSAGE = "notification.create.main";
+    public static final String SUCCESS = "notification.create.success";
+
     private final BotService botService;
     private final CommandCacheService commandCacheService;
 
     @Override
-    public void executeWithExceptions(Update update) throws NoCoinPairOnExchangeException, NotificationConditionAlreadyDoneException, WrongNotificationFormatException, NotSupportedCurrencyException, ExchangeServerException, AnyRuntimeException, CurrencyEqualsCodeException {
+    public Language getLanguage(long chatId) {
+        return botService.getLanguage(chatId);
+    }
+
+    @Override
+    public void executeWithExceptions(Update update) throws CommonException {
         String text;
         Long chatId;
         Integer messageId;
@@ -42,18 +50,19 @@ public class NotificationCreateCommand implements Command {
             return;
         }
 
+        var language = getLanguage(chatId);
         try {
             if (text.contentEquals(getCommandName().getCommandIdentifier())) {
-                MessageSender.editOrSend(chatId, messageId, CREATE_NOTIFICATION_MESSAGE);
+                MessageSender.editOrSend(chatId, messageId, BotMessages.getBotMessage(language, CREATE_NOTIFICATION_MESSAGE));
                 commandCacheService.setCurrentCommand(chatId, CommandName.NOTIFICATION_CREATE);
             } else if (text.startsWith(getCommandName().getCommandIdentifier())) {
                 var createRequest = text.substring(getCommandName().getCommandIdentifier().length()).trim();
                 botService.createNotification(chatId, createRequest);
-                MessageSender.editOrSend(chatId, messageId, NOTIFICATION_CREATED);
+                MessageSender.editOrSend(chatId, messageId, BotMessages.getBotMessage(language, SUCCESS));
                 commandCacheService.clearCache(chatId);
             } else if (!isCallback) {
                 botService.createNotification(chatId, text);
-                MessageSender.sendMessage(chatId, NOTIFICATION_CREATED);
+                MessageSender.sendMessage(chatId, BotMessages.getBotMessage(language, SUCCESS));
                 commandCacheService.clearCache(chatId);
             }
         } catch (RuntimeException e) {
@@ -65,13 +74,5 @@ public class NotificationCreateCommand implements Command {
     @Override
     public CommandName getCommandName() {
         return CommandName.NOTIFICATION_CREATE;
-    }
-
-    static class TextMessages {
-        public static final String CREATE_NOTIFICATION_MESSAGE = "Чтобы создать новое уведомление, отправьте сообщение в формате\n" +
-                "{криптовалюта} <(>) {цена} {валюта}\n\n" +
-                "Например:\n" +
-                "BTC > 23000.12 USDT";
-        public static final String NOTIFICATION_CREATED = "Уведомление создано";
     }
 }

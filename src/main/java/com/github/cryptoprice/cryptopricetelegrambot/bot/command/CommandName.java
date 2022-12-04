@@ -6,6 +6,7 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command;
 public enum CommandName {
 
     START("/start"),
+    LANGUAGE("/language"),
     STOP("/stop"),
     PRICE("/price"),
     COIN_PRICE("/coinPrice"),

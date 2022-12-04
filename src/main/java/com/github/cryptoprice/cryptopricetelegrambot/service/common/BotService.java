@@ -4,6 +4,7 @@ import com.github.cryptoprice.cryptopricetelegrambot.dto.CoinPriceDto;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.*;
 import com.github.cryptoprice.cryptopricetelegrambot.model.Notification;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,10 @@ public interface BotService {
     void stopChat(Long chatId);
 
     void deleteChat(Long chatId);
+
+    Language getLanguage(Long chatId);
+
+    void changeLanguage(Language language, Long chatId);
 
     void checkNotifications();
 

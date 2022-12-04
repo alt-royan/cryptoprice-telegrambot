@@ -6,7 +6,5 @@ public enum CurrencyCounter {
     USD,
     USDT,
     BTC,
-    ETH,
-    BUSD,
-    USDC
+    ETH
 }

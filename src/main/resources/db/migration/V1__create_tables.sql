@@ -3,6 +3,7 @@ CREATE TABLE chat
     id           BIGINT PRIMARY KEY,
     chat_id      BIGINT UNIQUE NOT NULL,
     exchange     varchar(20)   NOT NULL,
+    language     varchar(20)   NOT NULL,
     status       varchar(20)   NOT NULL,
     chat_started timestamp     NOT NULL
 );

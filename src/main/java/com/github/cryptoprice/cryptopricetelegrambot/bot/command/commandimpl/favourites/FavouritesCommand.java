@@ -3,7 +3,10 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.fa
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
 import com.github.cryptoprice.cryptopricetelegrambot.exception.AnyRuntimeException;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.CommonException;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
+import com.github.cryptoprice.cryptopricetelegrambot.utils.BotMessages;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -13,17 +16,27 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.favourites.FavouritesCommand.TextMessages.*;
-
 
 @Component
 @RequiredArgsConstructor
 public class FavouritesCommand implements Command {
 
+    public final static String NO_FAVOURITES = "favourites.noFavourites";
+    public final static String FAVOURITES = "favourites.main";
+    public final static String ADD_FAVOURITE = "favourites.addFavourites.title";
+    public final static String ADD_FAVOURITE_CALLBACK = CommandName.FAVOURITES_ADD.getCommandIdentifier();
+    public final static String DELETE_FAVOURITE = "favourites.deleteFavourites.title";
+    public final static String DELETE_FAVOURITE_CALLBACK = CommandName.FAVOURITES_REMOVE.getCommandIdentifier();
+
     private final BotService botService;
 
     @Override
-    public void executeWithExceptions(Update update) throws AnyRuntimeException {
+    public Language getLanguage(long chatId) {
+        return botService.getLanguage(chatId);
+    }
+
+    @Override
+    public void executeWithExceptions(Update update) throws CommonException {
         String text;
         Long chatId;
         Integer messageId;
@@ -40,6 +53,7 @@ public class FavouritesCommand implements Command {
             return;
         }
 
+        var language = getLanguage(chatId);
         try {
             if (text.contentEquals(getCommandName().getCommandIdentifier())) {
                 var favourites = botService.getFavouriteCoins(chatId);
@@ -47,24 +61,25 @@ public class FavouritesCommand implements Command {
                 if (favourites.isEmpty()) {
                     List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
                     keyboard.add(List.of(InlineKeyboardButton.builder()
-                            .text(ADD_FAVOURITE)
+                            .text(BotMessages.getBotMessage(language, ADD_FAVOURITE))
                             .callbackData(ADD_FAVOURITE_CALLBACK)
                             .build()));
-                    MessageSender.editOrSend(chatId, messageId, NO_FAVOURITES, keyboard);
+                    MessageSender.editOrSend(chatId, messageId, BotMessages.getBotMessage(language, NO_FAVOURITES), keyboard);
                 } else {
-                    var response = new StringBuilder("Избранные криптовалюты:\n\n");
+                    var response = new StringBuilder();
                     for (String f : favourites) {
                         response.append(f.toUpperCase()).append(" ");
                     }
+                    var responseStr = String.format(BotMessages.getBotMessage(language, FAVOURITES), response);
                     List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
                     keyboard.add(List.of(InlineKeyboardButton.builder()
-                            .text(ADD_FAVOURITE)
+                            .text(BotMessages.getBotMessage(language, ADD_FAVOURITE))
                             .callbackData(ADD_FAVOURITE_CALLBACK)
                             .build(), InlineKeyboardButton.builder()
-                            .text(DELETE_FAVOURITE)
+                            .text(BotMessages.getBotMessage(language, DELETE_FAVOURITE))
                             .callbackData(DELETE_FAVOURITE_CALLBACK)
                             .build()));
-                    MessageSender.editOrSend(chatId, messageId, response.toString(), keyboard);
+                    MessageSender.editOrSend(chatId, messageId, responseStr, keyboard);
                 }
             }
         } catch (RuntimeException e) {
@@ -76,13 +91,5 @@ public class FavouritesCommand implements Command {
     @Override
     public CommandName getCommandName() {
         return CommandName.FAVOURITES;
-    }
-
-    static class TextMessages {
-        public final static String NO_FAVOURITES = "У вас нет избранных криптовалют";
-        public final static String ADD_FAVOURITE = "Добавить";
-        public final static String ADD_FAVOURITE_CALLBACK = "/favouritesAdd";
-        public final static String DELETE_FAVOURITE = "Удалить";
-        public final static String DELETE_FAVOURITE_CALLBACK = "/favouritesRemove";
     }
 }

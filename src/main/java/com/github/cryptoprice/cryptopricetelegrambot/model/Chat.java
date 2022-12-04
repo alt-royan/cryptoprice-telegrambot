@@ -2,6 +2,7 @@ package com.github.cryptoprice.cryptopricetelegrambot.model;
 
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.ChatStatus;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -26,6 +27,9 @@ public class Chat {
 
     @Enumerated(EnumType.STRING)
     private Exchange exchange;
+
+    @Enumerated(EnumType.STRING)
+    private Language language;
 
     @Enumerated(EnumType.STRING)
     private ChatStatus status;

@@ -5,6 +5,7 @@ import com.github.cryptoprice.cryptopricetelegrambot.exception.*;
 import com.github.cryptoprice.cryptopricetelegrambot.model.Chat;
 import com.github.cryptoprice.cryptopricetelegrambot.model.Notification;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Exchange;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import com.github.cryptoprice.cryptopricetelegrambot.model.enums.NotificationType;
 import com.github.cryptoprice.cryptopricetelegrambot.service.chat.ChatService;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
@@ -188,6 +189,18 @@ public class ServiceExecutorImpl implements BotService, ServiceExecutor {
     public void deleteChat(Long chatId) {
         chatService.deleteChat(chatId);
         notificationService.deleteAllNotification(chatId);
+    }
+
+    @Override
+    public Language getLanguage(Long chatId) {
+        var language = chatService.getByChatId(chatId).getLanguage();
+        return language == null ? Language.EN : language;
+    }
+
+    @Override
+    public void changeLanguage(Language language, Long chatId) {
+        checkChatIsRegistered(chatId);
+        chatService.changeLanguage(chatId, language);
     }
 
     @Override

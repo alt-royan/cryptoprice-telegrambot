@@ -24,6 +24,7 @@ public class MessageSender {
     public static Message sendMessage(Long chatId, String message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
+        sendMessage.enableHtml(true);
         sendMessage.setText(message);
 
         try {
@@ -37,6 +38,7 @@ public class MessageSender {
     public static Message sendMessage(Long chatId, String message, List<List<InlineKeyboardButton>> keyboard) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
+        sendMessage.enableHtml(true);
         sendMessage.setReplyMarkup(InlineKeyboardMarkup.builder().keyboard(keyboard).build());
         sendMessage.setText(message);
 
@@ -70,6 +72,7 @@ public class MessageSender {
         var editMessage = EditMessageText.builder()
                 .messageId(messageId)
                 .text(text)
+                .parseMode("html")
                 .chatId(chatId)
                 .build();
         try {
@@ -83,6 +86,7 @@ public class MessageSender {
         var editMessage = EditMessageText.builder()
                 .messageId(messageId)
                 .text(text)
+                .parseMode("html")
                 .replyMarkup(InlineKeyboardMarkup.builder().keyboard(keyboard).build())
                 .chatId(chatId)
                 .build();

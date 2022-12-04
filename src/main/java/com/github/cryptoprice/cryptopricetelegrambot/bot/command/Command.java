@@ -2,6 +2,7 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command;
 
 
 import com.github.cryptoprice.cryptopricetelegrambot.exception.CommonException;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -26,12 +27,15 @@ public interface Command {
             return;
         }
 
+
         try {
             this.executeWithExceptions(update);
         } catch (CommonException e) {
-            e.handleMessage(chatId);
+            e.handleMessage(chatId, getLanguage(chatId));
         }
     }
+
+    Language getLanguage(long chatId);
 
     void executeWithExceptions(Update update) throws CommonException;
 

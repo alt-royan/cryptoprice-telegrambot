@@ -2,32 +2,30 @@ package com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl;
 
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.Command;
 import com.github.cryptoprice.cryptopricetelegrambot.bot.command.CommandName;
+import com.github.cryptoprice.cryptopricetelegrambot.exception.CommonException;
+import com.github.cryptoprice.cryptopricetelegrambot.model.enums.Language;
 import com.github.cryptoprice.cryptopricetelegrambot.service.common.BotService;
+import com.github.cryptoprice.cryptopricetelegrambot.utils.BotMessages;
 import com.github.cryptoprice.cryptopricetelegrambot.utils.MessageSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.StartCommand.TextMessages.START_MESSAGE;
-import static com.github.cryptoprice.cryptopricetelegrambot.bot.command.commandimpl.StartCommand.TextMessages.TRY_AGAIN;
-
 @Component
 @RequiredArgsConstructor
 public class StartCommand implements Command {
 
+    public final static String START_MESSAGE = "start.message";
+
     private final BotService botService;
 
     @Override
-    public void execute(Update update) {
-        try {
-            this.executeWithExceptions(update);
-        } catch (RuntimeException e) {
-            MessageSender.sendMessage(update.getMessage().getChatId(), TRY_AGAIN);
-        }
+    public Language getLanguage(long chatId) {
+        return botService.getLanguage(chatId);
     }
 
     @Override
-    public void executeWithExceptions(Update update) {
+    public void executeWithExceptions(Update update) throws CommonException {
         long chatId;
 
         if (update.hasCallbackQuery()) {
@@ -39,17 +37,12 @@ public class StartCommand implements Command {
         }
 
         botService.registerChat(chatId);
-        MessageSender.sendMessage(chatId, START_MESSAGE);
+        var language = getLanguage(chatId);
+        MessageSender.sendMessage(chatId, BotMessages.getBotMessage(language, START_MESSAGE));
     }
 
     @Override
     public CommandName getCommandName() {
         return CommandName.START;
-    }
-
-    static class TextMessages {
-        public final static String START_MESSAGE = "Привет!";
-
-        public final static String TRY_AGAIN = "Ошибка. Попробуйте ещё раз";
     }
 }
